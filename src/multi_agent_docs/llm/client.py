@@ -17,7 +17,16 @@ def ask_llm(prompt: str) -> str:
     return response.choices[0].message.content
 
 
-if __name__ == "__main__":
-    answer = ask_llm("Привет! Кто ты? Ответь коротко.")
+def count_tokens(text: str) -> int:
+    result = giga.tokens_count(
+        [text],
+        model="GigaChat-3-Ultra"
+    )
 
-    print(answer)
+    return result[0].tokens
+
+
+if __name__ == "__main__":
+    text = "Привет! Это тестовый текст для подсчёта токенов."
+
+    print("Количество токенов:", count_tokens(text))
