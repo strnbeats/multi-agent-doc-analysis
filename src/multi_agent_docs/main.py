@@ -1,6 +1,5 @@
-from ingestion.loader import load_pdf
+from ingestion.loader import load_document
 
-text = load_pdf("data/raw/load.pdf")
+text = load_document("data/raw/load.pdf")
 
-print(text[:1000])
-print("Символов:", len(text))#временная проверка, чтобы убедиться, что текст загружен корректно
+print(text)

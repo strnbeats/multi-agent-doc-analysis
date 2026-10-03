@@ -4,6 +4,8 @@ from langgraph.graph import StateGraph, START, END
 
 from llm.client import ask_llm
 
+from ingestion.loader import load_pdf
+
 class State(TypedDict):
     text: str
     analysis: str
@@ -63,8 +65,10 @@ app = graph.compile()
 
 
 if __name__ == "__main__":
+    text = load_pdf("data/raw/load.pdf")
+
     test_state = {
-        "text": "Это тестовый текст документа.",
+        "text": text,
         "analysis": "",
         "summary": ""
     }
