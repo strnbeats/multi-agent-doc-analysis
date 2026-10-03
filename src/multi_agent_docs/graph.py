@@ -6,6 +6,7 @@ from .agents.analyzer import analyzer
 from .agents.summary import summary
 from .ingestion.loader import load_document
 from .agents.fact_checker import fact_checker
+from .agents.final import final_agent
 
 
 class State(TypedDict):
@@ -13,6 +14,7 @@ class State(TypedDict):
     analysis: str
     summary: str
     facts: str
+    final: str
 
 
 graph = StateGraph(State)
@@ -20,11 +22,13 @@ graph = StateGraph(State)
 graph.add_node("analyzer", analyzer)
 graph.add_node("summary", summary)
 graph.add_node("fact_checker", fact_checker)
+graph.add_node("final", final_agent)
 
 graph.add_edge(START, "analyzer")
 graph.add_edge("analyzer", "summary")
 graph.add_edge("summary", "fact_checker")
-graph.add_edge("fact_checker", END)
+graph.add_edge("fact_checker", "final")
+graph.add_edge("final", END)
 
 app = graph.compile()
 
@@ -38,7 +42,8 @@ if __name__ == "__main__":
         "text": text,
         "analysis": "",
         "summary": "",
-        "facts": ""
+        "facts": "",
+        "final": ""
     }
 
     result = app.invoke(initial_state)
@@ -51,3 +56,6 @@ if __name__ == "__main__":
 
     print("\n=== ПРОВЕРКА ФАКТОВ ===")
     print(result["facts"])
+
+    print("\n=== ФИНАЛЬНЫЙ РЕЗУЛЬТАТ ===")
+    print(result["final"])
