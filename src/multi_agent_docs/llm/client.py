@@ -3,18 +3,14 @@ from gigachat import GigaChat
 
 load_dotenv()
 
+total_input_tokens = 0
+
 giga = GigaChat(
     credentials=None,
     scope="GIGACHAT_API_PERS",
     model="GigaChat-3-Ultra",
     verify_ssl_certs=False,
 )
-
-
-def ask_llm(prompt: str) -> str:
-    response = giga.chat(prompt)
-
-    return response.choices[0].message.content
 
 
 def count_tokens(text: str) -> int:
@@ -26,7 +22,15 @@ def count_tokens(text: str) -> int:
     return result[0].tokens
 
 
-if __name__ == "__main__":
-    text = "Привет! Это тестовый текст для подсчёта токенов."
+def ask_llm(prompt: str) -> str:
+    global total_input_tokens
 
-    print("Количество токенов:", count_tokens(text))
+    tokens = count_tokens(prompt)
+
+    total_input_tokens += tokens
+
+    print(f"[LLM] Входных токенов: {tokens}")
+
+    response = giga.chat(prompt)
+
+    return response.choices[0].message.content

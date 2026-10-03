@@ -2,6 +2,8 @@ from typing import TypedDict
 
 from langgraph.graph import StateGraph, START, END
 
+from .llm import client
+
 from .agents.analyzer import analyzer
 from .agents.summary import summary
 from .ingestion.loader import load_document
@@ -59,3 +61,6 @@ if __name__ == "__main__":
 
     print("\n=== ФИНАЛЬНЫЙ РЕЗУЛЬТАТ ===")
     print(result["final"])
+    print("\n==============================")
+    print(f"TOTAL INPUT TOKENS: {client.total_input_tokens}")
+    print("==============================") 
