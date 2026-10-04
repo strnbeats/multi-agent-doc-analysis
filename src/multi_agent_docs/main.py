@@ -6,6 +6,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from .runner import run_document
 from .llm import client
 
+
 app = FastAPI(
     title="Multi-Agent Document Analysis",
     description="API для анализа PDF и TXT документов",
@@ -17,6 +18,13 @@ app = FastAPI(
 def root():
     return {
         "message": "Multi-Agent Document Analysis API"
+    }
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok"
     }
 
 
@@ -37,31 +45,55 @@ def analyze_document(file: UploadFile = File(...)):
             detail="Поддерживаются только PDF и TXT"
         )
 
-    with tempfile.NamedTemporaryFile(
-        suffix=extension,
-        delete=False
-    ) as temp_file:
-
-        temp_file.write(file.file.read())
-        temp_path = temp_file.name
-
     try:
-        result = run_document(temp_path)
 
-        return {
-            "filename": file.filename,
-            "analysis": result["analysis"],
-            "summary": result["summary"],
-            "facts": result["facts"],
-            "final": result["final"],
+        with tempfile.NamedTemporaryFile(
+            suffix=extension,
+            delete=False
+        ) as temp_file:
+            temp_file.write(file.file.read())
+            temp_path = temp_file.name
 
-            "token_usage": {
-                "total_input": client.total_input_tokens,
-                "total_output": client.total_output_tokens,
-                "total": client.total_tokens,
-                "by_agent": client.token_usage
+        try:
+            result = run_document(temp_path)
+            return {
+                "filename": file.filename,
+
+                "analysis": result["analysis"],
+                "summary": result["summary"],
+                "facts": result["facts"],
+                "final": result["final"],
+
+                "token_usage": {
+                    "total_input": client.total_input_tokens,
+                    "total_output": client.total_output_tokens,
+                    "total": client.total_tokens,
+                    "by_agent": client.token_usage
+                }
             }
-}
 
-    finally:
-        Path(temp_path).unlink(missing_ok=True)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+
+    except ValueError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+    except FileNotFoundError as error:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(error)
+        )
+
+    except Exception as error:
+
+        print(f"Ошибка при обработке документа: {error}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Внутренняя ошибка при обработке документа"
+        )
