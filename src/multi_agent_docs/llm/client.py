@@ -15,6 +15,7 @@ total_input_tokens = 0
 total_output_tokens = 0
 total_tokens = 0
 
+token_usage = {}
 
 def count_tokens(text: str) -> int:
     result = giga.tokens_count(
@@ -39,6 +40,19 @@ def ask_llm(prompt: str, agent_name: str) -> str:
     total_input_tokens += input_tokens
     total_output_tokens += output_tokens
     total_tokens += request_total
+
+    token_usage.setdefault(
+        agent_name,
+        {
+            "input": 0,
+            "output": 0,
+            "total": 0
+        }
+    )
+
+    token_usage[agent_name]["input"] += input_tokens
+    token_usage[agent_name]["output"] += output_tokens
+    token_usage[agent_name]["total"] += request_total
 
     print(
         f"[{agent_name}] "
