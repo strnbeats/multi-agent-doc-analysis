@@ -15,7 +15,7 @@ def analyzer(state):
 4. Краткий анализ содержания
 """
 
-    analysis = ask_llm(prompt)
+    analysis = ask_llm(prompt, "Analyzer")
 
     return {
         "analysis": analysis

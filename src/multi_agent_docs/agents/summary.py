@@ -11,7 +11,7 @@ def summary(state):
 Сформулируй содержание в 2-4 предложениях.
 """
 
-    summary_text = ask_llm(prompt)
+    summary_text = ask_llm(prompt, "Summary")
 
     return {
         "summary": summary_text

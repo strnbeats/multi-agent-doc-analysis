@@ -54,7 +54,7 @@ def fact_checker(state):
 """
 
 
-    facts = ask_llm(prompt)
+    facts = ask_llm(prompt, "Fact Checker")
 
     return {
         "facts": facts

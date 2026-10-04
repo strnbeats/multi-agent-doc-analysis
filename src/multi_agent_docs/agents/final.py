@@ -31,7 +31,7 @@ def final_agent(state):
 Не используй внешние источники.
 """
 
-    final = ask_llm(prompt)
+    final = ask_llm(prompt, "Final")
 
     return {
         "final": final

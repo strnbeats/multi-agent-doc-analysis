@@ -63,4 +63,6 @@ if __name__ == "__main__":
     print(result["final"])
     print("\n==============================")
     print(f"TOTAL INPUT TOKENS: {client.total_input_tokens}")
-    print("==============================") 
+    print(f"TOTAL OUTPUT TOKENS: {client.total_output_tokens}")
+    print(f"TOTAL TOKENS: {client.total_tokens}")
+    print("==============================")
