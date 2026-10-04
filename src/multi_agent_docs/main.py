@@ -4,7 +4,7 @@ import tempfile
 from fastapi import FastAPI, UploadFile, File, HTTPException
 
 from .runner import run_document
-
+from .llm import client
 
 app = FastAPI(
     title="Multi-Agent Document Analysis",
@@ -53,8 +53,15 @@ def analyze_document(file: UploadFile = File(...)):
             "analysis": result["analysis"],
             "summary": result["summary"],
             "facts": result["facts"],
-            "final": result["final"]
-        }
+            "final": result["final"],
+
+            "token_usage": {
+                "total_input": client.total_input_tokens,
+                "total_output": client.total_output_tokens,
+                "total": client.total_tokens,
+                "by_agent": client.token_usage
+            }
+}
 
     finally:
         Path(temp_path).unlink(missing_ok=True)
