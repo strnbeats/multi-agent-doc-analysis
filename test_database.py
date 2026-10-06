@@ -3,10 +3,12 @@ from src.multi_agent_docs.database.repository import (
     create_analysis,
     create_document,
     create_token_usage,
+    update_analysis,
 )
 
 
 db = SessionLocal()
+
 
 document = create_document(
     db=db,
@@ -21,15 +23,28 @@ print("Document ID:", document.id)
 analysis = create_analysis(
     db=db,
     document_id=document.id,
-    analysis="Документ посвящён тестированию базы данных.",
-    summary="Тестовый документ.",
-    facts="База данных содержит таблицу documents.",
-    final_result="Анализ успешно сохранён.",
+    analysis="Первичный анализ документа.",
+    summary="Первичное краткое содержание.",
+    facts="Первичные факты.",
+    final_result="Первичный результат.",
 )
 
 print("Analysis ID:", analysis.id)
 print("Document ID:", analysis.document_id)
 print("Status:", analysis.status)
+
+
+updated_analysis = update_analysis(
+    db=db,
+    analysis_id=analysis.id,
+    analysis="Обновлённый анализ документа.",
+    summary="Обновлённое краткое содержание.",
+    facts="Обновлённые факты.",
+    final_result="Обновлённый финальный результат.",
+)
+
+print("Updated analysis:", updated_analysis.analysis)
+print("Updated status:", updated_analysis.status)
 
 
 analyzer_usage = create_token_usage(

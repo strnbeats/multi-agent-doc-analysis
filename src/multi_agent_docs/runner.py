@@ -1,24 +1,109 @@
 from .graph import app
 from .ingestion.loader import load_document
 from .llm import client
-
+from .database.db import SessionLocal
+from .database.repository import (
+    create_analysis,
+    create_document,
+    create_token_usage,
+    update_analysis,
+    update_document_status,
+)
 
 def run_document(file_path: str):
 
-    text = load_document(file_path)
+    db = SessionLocal()
 
-    initial_state = {
-        "text": text,
-        "analysis": "",
-        "summary": "",
-        "facts": "",
-        "final": ""
-    }
+    document = None
 
-    result = app.invoke(initial_state)
+    try:
+        text = load_document(file_path)
 
-    return result
+        file_name = file_path.split("/")[-1]
 
+        document = create_document(
+            db=db,
+            filename=file_name,
+            file_type=file_name.split(".")[-1],
+            file_size=0,
+        )
+
+        print(f"Document created: {document.id}")
+
+        update_document_status(
+            db=db,
+            document_id=document.id,
+            status="processing",
+        )
+
+        analysis = create_analysis(
+            db=db,
+            document_id=document.id,
+            analysis="",
+            summary="",
+            facts="",
+            final_result="",
+        )
+
+        analysis.status = "processing"
+        db.commit()
+
+        print(f"Analysis created: {analysis.id}")
+
+        initial_state = {
+            "text": text,
+            "analysis": "",
+            "summary": "",
+            "facts": "",
+            "final": "",
+        }
+
+        result = app.invoke(initial_state)
+
+        update_analysis(
+            db=db,
+            analysis_id=analysis.id,
+            analysis=result["analysis"],
+            summary=result["summary"],
+            facts=result["facts"],
+            final_result=result["final"],
+        )
+
+        for agent_name, usage in client.token_usage.items():
+            create_token_usage(
+                db=db,
+                analysis_id=analysis.id,
+                agent_name=agent_name,
+                input_tokens=usage["input"],
+                output_tokens=usage["output"],
+            )
+
+        update_document_status(
+            db=db,
+            document_id=document.id,
+            status="completed",
+        )
+
+        print(f"Analysis completed: {analysis.id}")
+
+        return result
+
+    except Exception as e:
+
+        if document is not None:
+            update_document_status(
+                db=db,
+                document_id=document.id,
+                status="failed",
+                error=str(e),
+            )
+
+        print(f"Analysis failed: {e}")
+
+        raise
+
+    finally:
+        db.close()
 
 if __name__ == "__main__":
 

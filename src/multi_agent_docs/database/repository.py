@@ -23,6 +23,28 @@ def create_document(
     return document
 
 
+def update_document_status(
+    db: Session,
+    document_id: int,
+    status: str,
+    error: str | None = None,
+) -> Document:
+    document = db.get(Document, document_id)
+
+    if document is None:
+        raise ValueError(
+            f"Document with id={document_id} not found"
+        )
+
+    document.status = status
+    document.error = error
+
+    db.commit()
+    db.refresh(document)
+
+    return document
+
+
 def create_analysis(
     db: Session,
     document_id: int,
@@ -41,6 +63,33 @@ def create_analysis(
     )
 
     db.add(analysis_record)
+    db.commit()
+    db.refresh(analysis_record)
+
+    return analysis_record
+
+
+def update_analysis(
+    db: Session,
+    analysis_id: int,
+    analysis: str,
+    summary: str,
+    facts: str,
+    final_result: str,
+) -> Analysis:
+    analysis_record = db.get(Analysis, analysis_id)
+
+    if analysis_record is None:
+        raise ValueError(
+            f"Analysis with id={analysis_id} not found"
+        )
+
+    analysis_record.analysis = analysis
+    analysis_record.summary = summary
+    analysis_record.facts = facts
+    analysis_record.final_result = final_result
+    analysis_record.status = "completed"
+
     db.commit()
     db.refresh(analysis_record)
 
