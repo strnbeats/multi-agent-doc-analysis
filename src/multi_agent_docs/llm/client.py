@@ -1,64 +1,54 @@
-from dotenv import load_dotenv
+from functools import lru_cache
+from typing import Protocol
+
 from gigachat import GigaChat
 
-load_dotenv()
-
-giga = GigaChat(
-    credentials=None,
-    scope="GIGACHAT_API_PERS",
-    model="GigaChat-3-Ultra",
-    verify_ssl_certs=False,
-)
+from ..config import Settings
+from ..errors import LLMError
+from ..models import LLMAnswer, TokenCount
 
 
-total_input_tokens = 0
-total_output_tokens = 0
-total_tokens = 0
+class LLMClient(Protocol):
+    def ask(self, prompt: str) -> LLMAnswer: ...
 
-token_usage = {}
-
-def count_tokens(text: str) -> int:
-    result = giga.tokens_count(
-        [text],
-        model="GigaChat-3-Ultra"
-    )
-
-    return result[0].tokens
+    def count_tokens(self, text: str) -> int: ...
 
 
-def ask_llm(prompt: str, agent_name: str) -> str:
-    global total_input_tokens
-    global total_output_tokens
-    global total_tokens
+class GigaChatClient:
+    def __init__(self, settings: Settings):
+        self.model = settings.gigachat_model
+        try:
+            self._client = GigaChat(
+                credentials=settings.gigachat_credentials,
+                scope=settings.gigachat_scope,
+                model=settings.gigachat_model,
+                verify_ssl_certs=settings.gigachat_verify_ssl,
+            )
+        except Exception as error:
+            raise LLMError("Не удалось настроить подключение к GigaChat") from error
 
-    response = giga.chat(prompt)
+    def ask(self, prompt: str) -> LLMAnswer:
+        try:
+            response = self._client.chat(prompt)
+            return LLMAnswer(
+                content=response.choices[0].message.content,
+                usage=TokenCount(
+                    input_tokens=response.usage.prompt_tokens,
+                    output_tokens=response.usage.completion_tokens,
+                    total_tokens=response.usage.total_tokens,
+                ),
+            )
+        except Exception as error:
+            raise LLMError() from error
 
-    input_tokens = response.usage.prompt_tokens
-    output_tokens = response.usage.completion_tokens
-    request_total = response.usage.total_tokens
+    def count_tokens(self, text: str) -> int:
+        try:
+            result = self._client.tokens_count([text], model=self.model)
+            return result[0].tokens
+        except Exception as error:
+            raise LLMError("Не удалось определить размер документа") from error
 
-    total_input_tokens += input_tokens
-    total_output_tokens += output_tokens
-    total_tokens += request_total
 
-    token_usage.setdefault(
-        agent_name,
-        {
-            "input": 0,
-            "output": 0,
-            "total": 0
-        }
-    )
-
-    token_usage[agent_name]["input"] += input_tokens
-    token_usage[agent_name]["output"] += output_tokens
-    token_usage[agent_name]["total"] += request_total
-
-    print(
-        f"[{agent_name}] "
-        f"input: {input_tokens} | "
-        f"output: {output_tokens} | "
-        f"total: {request_total}"
-    )
-
-    return response.choices[0].message.content
+@lru_cache(maxsize=1)
+def get_default_client() -> GigaChatClient:
+    return GigaChatClient(Settings.from_env())

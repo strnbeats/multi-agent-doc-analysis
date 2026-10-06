@@ -1,32 +1,47 @@
-from typing import TypedDict
+from typing import Any, Dict, TypedDict
 
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 
 from .agents.analyzer import analyzer
-from .agents.summary import summary
 from .agents.fact_checker import fact_checker
 from .agents.final import final_agent
+from .agents.summary import summary
+from .llm.client import LLMClient
+from .models import TokenUsage
 
 
 class State(TypedDict):
     text: str
     analysis: str
     summary: str
-    facts: str
+    fact_check: Dict[str, Any]
     final: str
+    llm: Any
+    token_usage: TokenUsage
 
 
-graph = StateGraph(State)
+def _compile(nodes, edges):
+    graph = StateGraph(State)
+    for name, function in nodes:
+        graph.add_node(name, function)
+    graph.add_edge(START, nodes[0][0])
+    for source, target in edges:
+        graph.add_edge(source, target)
+    graph.add_edge(nodes[-1][0], END)
+    return graph.compile()
 
-graph.add_node("analyzer", analyzer)
-graph.add_node("summary", summary)
-graph.add_node("fact_checker", fact_checker)
-graph.add_node("final", final_agent)
 
-graph.add_edge(START, "analyzer")
-graph.add_edge("analyzer", "summary")
-graph.add_edge("summary", "fact_checker")
-graph.add_edge("fact_checker", "final")
-graph.add_edge("final", END)
+app = _compile(
+    [("analyzer", analyzer), ("summary", summary), ("fact_checker", fact_checker), ("final", final_agent)],
+    [("analyzer", "summary"), ("summary", "fact_checker"), ("fact_checker", "final")],
+)
 
-app = graph.compile()
+chunk_app = _compile(
+    [("analyzer", analyzer), ("fact_checker", fact_checker)],
+    [("analyzer", "fact_checker")],
+)
+
+synthesis_app = _compile(
+    [("summary", summary), ("final", final_agent)],
+    [("summary", "final")],
+)

@@ -1,22 +1,13 @@
-from ..llm.client import ask_llm
-
-
 def analyzer(state):
     prompt = f"""
-Проанализируй следующий текст документа.
+Проанализируй следующий текст документа. Работай только с предоставленным текстом.
 
 Текст:
 {state["text"]}
 
-Выдели:
-1. Основную тему
-2. Ключевые идеи
-3. Важные факты
-4. Краткий анализ содержания
+Выдели основную тему, ключевые идеи, важные факты и кратко оцени содержание.
+Не добавляй сведения, которых нет в тексте.
 """
-
-    analysis = ask_llm(prompt, "Analyzer")
-
-    return {
-        "analysis": analysis
-    }
+    answer = state["llm"].ask(prompt)
+    state["token_usage"].add("Analyzer", answer.usage)
+    return {"analysis": answer.content, "token_usage": state["token_usage"]}
