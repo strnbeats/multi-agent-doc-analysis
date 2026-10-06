@@ -6,6 +6,7 @@ class AppError(Exception):
     public_message = "Ошибка приложения"
 
     def __init__(self, message: str | None = None):
+        """Создать ошибку с безопасным публичным сообщением."""
         super().__init__(message or self.public_message)
         self.public_message = message or self.public_message
 

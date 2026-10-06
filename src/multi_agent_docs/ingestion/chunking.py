@@ -6,10 +6,12 @@ from ..llm.client import LLMClient
 
 
 def _rough_blocks(text: str, chars: int = 24_000) -> List[str]:
+    """Разделить текст на безопасные блоки для token-count API."""
     return [text[index : index + chars] for index in range(0, len(text), chars)]
 
 
 def count_document_tokens(text: str, llm: LLMClient, maximum: int) -> int:
+    """Посчитать токены блоками и сразу остановиться при превышении лимита."""
     total = 0
     for block in _rough_blocks(text):
         total += llm.count_tokens(block)
@@ -26,6 +28,7 @@ def split_document(
     target_tokens: int,
     overlap_tokens: int,
 ) -> List[Tuple[str, int]]:
+    """Разбить документ на ограниченные по токенам чанки с перекрытием."""
     paragraphs = [item.strip() for item in re.split(r"\n\s*\n", text) if item.strip()]
     if not paragraphs:
         return []
@@ -50,6 +53,7 @@ def split_document(
     chunks: List[Tuple[str, int]] = []
 
     def append_sized(value: str) -> None:
+        """Рекурсивно уменьшить чанк до целевого числа токенов."""
         value = value.strip()
         if not value:
             return

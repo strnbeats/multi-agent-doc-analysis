@@ -41,6 +41,7 @@ class FakeLLM:
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
     return Settings(
+        app_mode="mock",
         database_path=tmp_path / "app.db",
         upload_dir=tmp_path / "jobs",
         max_upload_bytes=100 * 1024 * 1024,

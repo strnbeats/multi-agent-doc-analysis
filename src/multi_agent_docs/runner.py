@@ -11,6 +11,7 @@ from .models import FactCheckResult, PipelineResult, TokenUsage
 
 
 def _state(text: str, llm: LLMClient, usage: TokenUsage) -> Dict:
+    """Создать начальное состояние LangGraph для одного запуска."""
     return {
         "text": text,
         "analysis": "",
@@ -23,6 +24,7 @@ def _state(text: str, llm: LLMClient, usage: TokenUsage) -> Dict:
 
 
 def _merge_usage(target: TokenUsage, source: TokenUsage) -> None:
+    """Объединить статистику токенов нескольких графов."""
     for agent, usage in source.by_agent.items():
         target.add(agent, usage)
 
@@ -34,6 +36,7 @@ def _reduce_texts(
     usage: TokenUsage,
     agent_name: str,
 ) -> str:
+    """Иерархически свести текстовые результаты группами до одного."""
     current = [value for value in values if value.strip()]
     if not current:
         return ""
@@ -51,6 +54,7 @@ def _reduce_texts(
 
 
 def _unique(values: Iterable[str]) -> List[str]:
+    """Удалить пустые строки и повторы с сохранением порядка."""
     return list(dict.fromkeys(value.strip() for value in values if value.strip()))
 
 
@@ -59,6 +63,7 @@ def run_document(
     llm: LLMClient | None = None,
     settings: Settings | None = None,
 ) -> PipelineResult:
+    """Загрузить документ и выполнить одно- или многочанковый pipeline."""
     settings = settings or Settings.from_env()
     llm = llm or get_default_client()
     text = load_document(file_path)

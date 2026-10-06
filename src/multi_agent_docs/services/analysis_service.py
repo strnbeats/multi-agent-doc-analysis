@@ -25,6 +25,7 @@ class AnalysisService:
         runner: Runner = run_document,
         llm_factory: Callable[[], LLMClient] = get_default_client,
     ):
+        """Собрать бизнес-сервис с repository, runner и LLM-фабрикой."""
         self.repository = repository
         self.settings = settings
         self.runner = runner
@@ -34,6 +35,7 @@ class AnalysisService:
         self._worker: Optional[Thread] = None
 
     def initialize(self) -> None:
+        """Подготовить БД, временный каталог и фоновый worker."""
         self.repository.initialize()
         self.repository.mark_interrupted()
         self.settings.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -48,12 +50,14 @@ class AnalysisService:
         self._worker.start()
 
     def shutdown(self) -> None:
+        """Остановить приём фоновых задач и дождаться worker."""
         self._stop.set()
         self._queue.put(None)
         if self._worker:
             self._worker.join(timeout=5)
 
     def submit(self, file_path: Path, original_filename: str) -> DocumentRecord:
+        """Проверить файл, зарегистрировать задачу и поставить её в очередь."""
         extension = file_path.suffix.lower()
         if extension not in {".pdf", ".txt"}:
             raise UnsupportedFormatError()
@@ -63,12 +67,15 @@ class AnalysisService:
         return record
 
     def get_document(self, document_id: int) -> Optional[DocumentRecord]:
+        """Вернуть одну запись истории."""
         return self.repository.get_by_id(document_id)
 
     def list_documents(self, limit: int, offset: int) -> Tuple[List[DocumentRecord], int]:
+        """Вернуть страницу истории анализов."""
         return self.repository.get_all(limit, offset)
 
     def is_healthy(self) -> bool:
+        """Проверить repository и состояние фонового worker."""
         return (
             self.repository.is_healthy()
             and self._worker is not None
@@ -76,6 +83,7 @@ class AnalysisService:
         )
 
     def _worker_loop(self) -> None:
+        """Последовательно выполнять задачи очереди и сохранять результат."""
         while not self._stop.is_set():
             item = self._queue.get()
             if item is None:
@@ -116,6 +124,7 @@ class AnalysisService:
                 self._queue.task_done()
 
     def _safe_fail(self, document_id: int, code: str, message: str) -> None:
+        """Попытаться сохранить ошибку, не завершая worker."""
         try:
             self.repository.fail(document_id, code, message)
         except AppError:

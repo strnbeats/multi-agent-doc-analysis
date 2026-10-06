@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 
 def _int_setting(name: str, default: int) -> int:
+    """Прочитать положительное целочисленное значение окружения."""
     value = int(os.getenv(name, str(default)))
     if value <= 0:
         raise ValueError(f"{name} должен быть положительным числом")
@@ -16,6 +17,7 @@ def _int_setting(name: str, default: int) -> int:
 
 @dataclass(frozen=True)
 class Settings:
+    app_mode: str
     database_path: Path
     upload_dir: Path
     max_upload_bytes: int
@@ -28,13 +30,18 @@ class Settings:
     gigachat_verify_ssl: bool
 
     def __post_init__(self) -> None:
+        """Проверить согласованность настроек после создания."""
+        if self.app_mode not in {"real", "mock"}:
+            raise ValueError("APP_MODE должен быть real или mock")
         if self.chunk_overlap_tokens >= self.chunk_target_tokens:
             raise ValueError("CHUNK_OVERLAP_TOKENS должен быть меньше CHUNK_TARGET_TOKENS")
 
     @classmethod
     def from_env(cls) -> "Settings":
+        """Загрузить настройки из .env и переменных окружения."""
         load_dotenv()
         return cls(
+            app_mode=os.getenv("APP_MODE", "real").lower(),
             database_path=Path(os.getenv("DATABASE_PATH", "data/app.db")),
             upload_dir=Path(os.getenv("UPLOAD_DIR", "data/jobs")),
             max_upload_bytes=_int_setting("MAX_UPLOAD_BYTES", 100 * 1024 * 1024),

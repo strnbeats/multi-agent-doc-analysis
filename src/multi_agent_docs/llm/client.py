@@ -9,13 +9,18 @@ from ..models import LLMAnswer, TokenCount
 
 
 class LLMClient(Protocol):
-    def ask(self, prompt: str) -> LLMAnswer: ...
+    def ask(self, prompt: str) -> LLMAnswer:
+        """Отправить prompt в реализацию языковой модели."""
+        ...
 
-    def count_tokens(self, text: str) -> int: ...
+    def count_tokens(self, text: str) -> int:
+        """Посчитать токены в реализации языковой модели."""
+        ...
 
 
 class GigaChatClient:
     def __init__(self, settings: Settings):
+        """Настроить SDK GigaChat из параметров приложения."""
         self.model = settings.gigachat_model
         try:
             self._client = GigaChat(
@@ -28,6 +33,7 @@ class GigaChatClient:
             raise LLMError("Не удалось настроить подключение к GigaChat") from error
 
     def ask(self, prompt: str) -> LLMAnswer:
+        """Отправить prompt и вернуть текст вместе со статистикой токенов."""
         try:
             response = self._client.chat(prompt)
             return LLMAnswer(
@@ -42,6 +48,7 @@ class GigaChatClient:
             raise LLMError() from error
 
     def count_tokens(self, text: str) -> int:
+        """Получить точное число токенов текста через GigaChat API."""
         try:
             result = self._client.tokens_count([text], model=self.model)
             return result[0].tokens
@@ -51,4 +58,5 @@ class GigaChatClient:
 
 @lru_cache(maxsize=1)
 def get_default_client() -> GigaChatClient:
+    """Вернуть один лениво созданный реальный клиент GigaChat."""
     return GigaChatClient(Settings.from_env())

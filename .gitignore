@@ -206,9 +206,9 @@ cython_debug/
 tempCodeRunnerFile.py
 
 # Runtime data
-data/app.db
-data/app.db-shm
-data/app.db-wal
+data/*.db
+data/*.db-shm
+data/*.db-wal
 data/jobs/
 
 # Ruff stuff:

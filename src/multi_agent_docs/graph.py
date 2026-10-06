@@ -21,6 +21,7 @@ class State(TypedDict):
 
 
 def _compile(nodes, edges):
+    """Собрать линейный LangGraph из узлов и переходов."""
     graph = StateGraph(State)
     for name, function in nodes:
         graph.add_node(name, function)

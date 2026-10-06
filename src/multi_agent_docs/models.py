@@ -22,6 +22,7 @@ class TokenUsage(TokenCount):
     by_agent: Dict[str, TokenCount] = Field(default_factory=dict)
 
     def add(self, agent_name: str, usage: TokenCount) -> None:
+        """Добавить расход токенов к задаче и конкретному агенту."""
         self.input_tokens += usage.input_tokens
         self.output_tokens += usage.output_tokens
         self.total_tokens += usage.total_tokens
@@ -71,4 +72,3 @@ class DocumentRecord(BaseModel):
     total_tokens: int = 0
     error_code: Optional[str] = None
     error_message: Optional[str] = None
-

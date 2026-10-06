@@ -8,6 +8,7 @@ from ..models import FactCheckResult
 
 
 def _json_payload(text: str) -> Dict[str, Any]:
+    """Извлечь JSON-объект из обычного ответа или Markdown-блока."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         lines = cleaned.splitlines()
@@ -23,10 +24,12 @@ def _json_payload(text: str) -> Dict[str, Any]:
 
 
 def _parse_result(text: str) -> FactCheckResult:
+    """Проверить JSON Fact Checker через Pydantic-схему."""
     return FactCheckResult.model_validate(_json_payload(text))
 
 
 def fact_checker(state):
+    """Проверить анализ и оценить нейрослоп исходного текста."""
     prompt = f"""
 Проверь анализ относительно исходного текста и отдельно оцени вероятность того,
 что ИСХОДНЫЙ ТЕКСТ является низкокачественным, шаблонным AI-контентом

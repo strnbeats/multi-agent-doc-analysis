@@ -9,20 +9,24 @@ from .db import Database
 
 
 def utc_now() -> datetime:
+    """Вернуть текущее время UTC для записей базы."""
     return datetime.now(timezone.utc)
 
 
 class DocumentRepository:
     def __init__(self, database: Database):
+        """Привязать repository к SQLite-подключению."""
         self.database = database
 
     def initialize(self) -> None:
+        """Применить миграции и подготовить базу."""
         try:
             self.database.initialize()
         except sqlite3.Error as error:
             raise StorageError() from error
 
     def create(self, filename: str) -> DocumentRecord:
+        """Создать запись анализа в статусе queued."""
         now = utc_now().isoformat()
         try:
             with self.database.connect() as connection:
@@ -36,6 +40,7 @@ class DocumentRepository:
             raise StorageError() from error
 
     def mark_running(self, document_id: int) -> None:
+        """Перевести анализ в статус running."""
         self._update_status(document_id, DocumentStatus.RUNNING)
 
     def complete(
@@ -45,6 +50,7 @@ class DocumentRepository:
         neuroslop: float,
         usage: TokenUsage,
     ) -> None:
+        """Сохранить успешный результат и статистику токенов."""
         now = utc_now().isoformat()
         try:
             with self.database.connect() as connection:
@@ -71,6 +77,7 @@ class DocumentRepository:
             raise StorageError() from error
 
     def fail(self, document_id: int, error_code: str, error_message: str) -> None:
+        """Сохранить безопасную ошибку завершения анализа."""
         now = utc_now().isoformat()
         try:
             with self.database.connect() as connection:
@@ -86,6 +93,7 @@ class DocumentRepository:
             raise StorageError() from error
 
     def mark_interrupted(self) -> int:
+        """Пометить незавершённые после рестарта задачи ошибкой."""
         now = utc_now().isoformat()
         try:
             with self.database.connect() as connection:
@@ -103,6 +111,7 @@ class DocumentRepository:
             raise StorageError() from error
 
     def get_by_id(self, document_id: int) -> Optional[DocumentRecord]:
+        """Получить анализ по идентификатору."""
         try:
             with self.database.connect() as connection:
                 row = connection.execute(
@@ -113,6 +122,7 @@ class DocumentRepository:
             raise StorageError() from error
 
     def get_all(self, limit: int, offset: int) -> Tuple[List[DocumentRecord], int]:
+        """Получить страницу истории и общее число записей."""
         try:
             with self.database.connect() as connection:
                 total = connection.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
@@ -129,12 +139,14 @@ class DocumentRepository:
             raise StorageError() from error
 
     def is_healthy(self) -> bool:
+        """Проверить доступность слоя хранения."""
         try:
             return self.database.is_healthy()
         except sqlite3.Error:
             return False
 
     def _update_status(self, document_id: int, status: DocumentStatus) -> None:
+        """Обновить статус и время изменения записи."""
         try:
             with self.database.connect() as connection:
                 connection.execute(
@@ -146,6 +158,7 @@ class DocumentRepository:
 
     @staticmethod
     def _to_record(row: sqlite3.Row) -> DocumentRecord:
+        """Преобразовать SQLite-строку в доменную модель."""
         data = dict(row)
         data["result"] = json.loads(data["result"]) if data["result"] else None
         return DocumentRecord.model_validate(data)

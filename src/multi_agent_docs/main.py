@@ -26,6 +26,7 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Создать сервис на старте и корректно остановить его при завершении."""
     service = create_analysis_service()
     service.initialize()
     app.state.analysis_service = service
@@ -44,10 +45,12 @@ app = FastAPI(
 
 
 def _service(request: Request):
+    """Получить бизнес-сервис из состояния FastAPI."""
     return request.app.state.analysis_service
 
 
 def _error(error: AppError, status_code: int) -> HTTPException:
+    """Преобразовать прикладную ошибку в безопасную HTTP-ошибку."""
     return HTTPException(
         status_code=status_code,
         detail={"code": error.code, "message": error.public_message},
@@ -55,6 +58,7 @@ def _error(error: AppError, status_code: int) -> HTTPException:
 
 
 def _list_item(record) -> DocumentListItem:
+    """Преобразовать запись БД в облегчённый элемент истории."""
     return DocumentListItem(
         id=record.id,
         filename=record.filename,
@@ -73,6 +77,7 @@ def _list_item(record) -> DocumentListItem:
 
 
 def _detail(record) -> DocumentDetail:
+    """Преобразовать запись БД в полный публичный ответ API."""
     stored = record.result or {}
     fact_check = stored.get("fact_check")
     results = None
@@ -107,6 +112,7 @@ def _detail(record) -> DocumentDetail:
 
 @app.get("/", include_in_schema=False)
 def root():
+    """Вернуть краткую информацию о backend и ссылку на Swagger."""
     return {"message": "Multi-Agent Document Analysis API", "docs": "/docs"}
 
 
@@ -117,6 +123,7 @@ def root():
     tags=["system"],
 )
 def health(request: Request):
+    """Проверить доступность базы и фонового worker."""
     if not _service(request).is_healthy():
         return JSONResponse(status_code=503, content={"status": "unavailable"})
     return HealthResponse(status="ok")
@@ -135,6 +142,7 @@ def health(request: Request):
     tags=["analysis"],
 )
 async def analyze_document(request: Request, file: UploadFile = File(...)):
+    """Принять документ, ограничить загрузку и поставить анализ в очередь."""
     service = _service(request)
     filename = Path(file.filename or "").name
     if not filename:
@@ -206,6 +214,7 @@ def list_documents(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
+    """Вернуть отсортированную страницу истории анализов."""
     try:
         records, total = _service(request).list_documents(limit, offset)
         return DocumentListResponse(
@@ -225,6 +234,7 @@ def list_documents(
     tags=["documents"],
 )
 def get_document(document_id: int, request: Request):
+    """Вернуть состояние и результат конкретного анализа."""
     try:
         record = _service(request).get_document(document_id)
     except AppError as error:

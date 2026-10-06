@@ -5,6 +5,7 @@ from ..errors import CorruptDocumentError, EmptyDocumentError, ExtractionError, 
 
 
 def load_pdf(file_path: str) -> str:
+    """Проверить PDF и извлечь непустой текст всех страниц."""
     path = Path(file_path)
 
     if not path.exists():
@@ -37,6 +38,7 @@ def load_pdf(file_path: str) -> str:
 
 
 def load_txt(file_path: str) -> str:
+    """Прочитать непустой UTF-8 TXT и отклонить бинарный файл."""
     path = Path(file_path)
 
     if not path.exists():
@@ -60,6 +62,7 @@ def load_txt(file_path: str) -> str:
 
 
 def load_document(file_path: str) -> str:
+    """Выбрать загрузчик документа по поддерживаемому расширению."""
     path = Path(file_path)
 
     if path.suffix.lower() == ".pdf":
@@ -72,4 +75,5 @@ def load_document(file_path: str) -> str:
 
 
 def validate_document(file_path: str) -> None:
+    """Убедиться, что документ корректен и содержит текст."""
     load_document(file_path)
