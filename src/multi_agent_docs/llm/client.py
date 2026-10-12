@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from gigachat import GigaChat
+from gigachat.models import Chat, Messages, MessagesRole
 
 load_dotenv()
 
@@ -10,28 +11,45 @@ giga = GigaChat(
     verify_ssl_certs=False,
 )
 
-
 total_input_tokens = 0
 total_output_tokens = 0
 total_tokens = 0
 
 token_usage = {}
 
+
 def count_tokens(text: str) -> int:
     result = giga.tokens_count(
         [text],
-        model="GigaChat-3-Ultra"
+        model="GigaChat-3-Ultra",
     )
 
     return result[0].tokens
 
 
-def ask_llm(prompt: str, agent_name: str) -> str:
+def ask_llm(
+    system_prompt: str,
+    user_content: str,
+    agent_name: str,
+) -> str:
     global total_input_tokens
     global total_output_tokens
     global total_tokens
 
-    response = giga.chat(prompt)
+    request = Chat(
+        messages=[
+            Messages(
+                role=MessagesRole.SYSTEM,
+                content=system_prompt,
+            ),
+            Messages(
+                role=MessagesRole.USER,
+                content=user_content,
+            ),
+        ]
+    )
+
+    response = giga.chat(request)
 
     input_tokens = response.usage.prompt_tokens
     output_tokens = response.usage.completion_tokens
@@ -46,8 +64,8 @@ def ask_llm(prompt: str, agent_name: str) -> str:
         {
             "input": 0,
             "output": 0,
-            "total": 0
-        }
+            "total": 0,
+        },
     )
 
     token_usage[agent_name]["input"] += input_tokens

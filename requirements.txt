@@ -1,0 +1,7 @@
+gigachat
+langgraph
+fastapi
+sqlalchemy
+pypdf
+python-dotenv
+pytest
