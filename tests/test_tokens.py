@@ -1,14 +1,18 @@
-from multi_agent_docs.ingestion.loader import load_document
+from unittest.mock import patch
+
 from multi_agent_docs.llm.client import count_tokens
 
 
-file_path = "data/raw/load.pdf"
+def test_count_tokens_returns_token_count():
+    with patch("multi_agent_docs.llm.client.giga.tokens_count") as mock_count:
+        mock_count.return_value = [
+            type("TokenCount", (), {"tokens": 42})()
+        ]
 
-text = load_document(file_path)
+        result = count_tokens("Пример текста для проверки")
 
-tokens = count_tokens(text)
-
-print("=== TOKEN TEST ===")
-print("Символов:", len(text))
-print("Токенов:", tokens)
-print("Примерно символов на токен:", round(len(text) / tokens, 2))
+    assert result == 42
+    mock_count.assert_called_once_with(
+        ["Пример текста для проверки"],
+        model="GigaChat-3-Ultra",
+    )

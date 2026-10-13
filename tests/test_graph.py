@@ -1,4 +1,3 @@
-
 from unittest.mock import patch
 
 from multi_agent_docs.graph import app

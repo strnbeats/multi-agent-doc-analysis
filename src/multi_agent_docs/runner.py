@@ -50,12 +50,17 @@ def run_document(file_path: str):
 
         print(f"Analysis created: {analysis.id}")
 
+
         initial_state = {
             "text": text,
             "analysis": "",
             "summary": "",
             "facts": "",
             "final": "",
+            "quality_ok": False,
+            "quality_feedback": "",
+            "retry_fact_checker": False,
+            "revision_count": 0,
         }
 
         result = app.invoke(initial_state)
