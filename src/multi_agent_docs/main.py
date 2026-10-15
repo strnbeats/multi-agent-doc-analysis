@@ -18,6 +18,7 @@ from .api_schemas import (
 )
 from .bootstrap import create_analysis_service
 from .errors import AppError, StorageError, UnsupportedFormatError
+from .ingestion.metadata import detect_file_type
 from .models import NeuroslopResult, TokenCount
 
 logger = logging.getLogger(__name__)
@@ -98,6 +99,7 @@ def _detail(record) -> DocumentDetail:
         updated_at=record.updated_at,
         status=record.status,
         neuroslop=neuroslop,
+        metadata=stored.get("metadata"),
         results=results,
         token_usage=TokenUsageResponse(
             input_tokens=record.input_tokens,
@@ -147,14 +149,15 @@ async def analyze_document(request: Request, file: UploadFile = File(...)):
     filename = Path(file.filename or "").name
     if not filename:
         raise HTTPException(status_code=400, detail={"code": "missing_filename", "message": "Файл не имеет имени"})
-    extension = Path(filename).suffix.lower()
+    try:
+        file_type = detect_file_type(filename)
+    except UnsupportedFormatError as error:
+        raise _error(error, 415) from error
     allowed_types = {
-        ".pdf": {"application/pdf", "application/octet-stream"},
-        ".txt": {"text/plain", "application/octet-stream"},
+        "pdf": {"application/pdf", "application/octet-stream"},
+        "txt": {"text/plain", "application/octet-stream"},
     }
-    if extension not in allowed_types:
-        raise _error(UnsupportedFormatError(), 415)
-    if file.content_type and file.content_type not in allowed_types[extension]:
+    if file.content_type and file.content_type not in allowed_types[file_type]:
         raise _error(UnsupportedFormatError("Тип содержимого не соответствует расширению файла"), 415)
 
     service.settings.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -164,7 +167,7 @@ async def analyze_document(request: Request, file: UploadFile = File(...)):
         with tempfile.NamedTemporaryFile(
             dir=service.settings.upload_dir,
             prefix="analysis-",
-            suffix=extension,
+            suffix=f".{file_type}",
             delete=False,
         ) as target:
             temp_path = Path(target.name)

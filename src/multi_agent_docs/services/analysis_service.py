@@ -6,7 +6,7 @@ from typing import Callable, List, Optional, Tuple
 
 from ..config import Settings
 from ..database.repository import DocumentRepository
-from ..errors import AppError, PipelineError, UnsupportedFormatError
+from ..errors import AppError, PipelineError
 from ..ingestion.loader import validate_document
 from ..llm.client import LLMClient, get_default_client
 from ..models import DocumentRecord, PipelineResult
@@ -58,9 +58,6 @@ class AnalysisService:
 
     def submit(self, file_path: Path, original_filename: str) -> DocumentRecord:
         """Проверить файл, зарегистрировать задачу и поставить её в очередь."""
-        extension = file_path.suffix.lower()
-        if extension not in {".pdf", ".txt"}:
-            raise UnsupportedFormatError()
         validate_document(str(file_path))
         record = self.repository.create(original_filename)
         self._queue.put((record.id, file_path))
@@ -103,6 +100,8 @@ class AnalysisService:
                         for name, value in output.token_usage.by_agent.items()
                     },
                 }
+                if output.metadata is not None:
+                    result["metadata"] = output.metadata.model_dump()
                 self.repository.complete(
                     document_id,
                     result,

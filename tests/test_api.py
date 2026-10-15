@@ -45,6 +45,7 @@ def test_api_background_flow(monkeypatch, settings):
         assert detail.status_code == 200
         assert detail.json()["status"] == "completed"
         assert detail.json()["neuroslop"]["probability"] == 0.1
+        assert detail.json()["metadata"] is None
         history = client.get("/documents?limit=50&offset=0")
         assert history.status_code == 200
         assert history.json()["total"] == 1

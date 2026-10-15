@@ -6,14 +6,18 @@ from .config import Settings
 from .graph import app, chunk_app, synthesis_app
 from .ingestion.chunking import count_document_tokens, split_document
 from .ingestion.loader import load_document
+from .ingestion.metadata import get_document_metadata
 from .llm.client import LLMClient, get_default_client
-from .models import FactCheckResult, PipelineResult, TokenUsage
+from .models import DocumentMetadata, FactCheckResult, PipelineResult, TokenUsage
 
 
-def _state(text: str, llm: LLMClient, usage: TokenUsage) -> Dict:
+def _state(
+    text: str, llm: LLMClient, usage: TokenUsage, metadata: DocumentMetadata
+) -> Dict:
     """Создать начальное состояние LangGraph для одного запуска."""
     return {
         "text": text,
+        "metadata": metadata,
         "analysis": "",
         "summary": "",
         "fact_check": {},
@@ -66,6 +70,7 @@ def run_document(
     """Загрузить документ и выполнить одно- или многочанковый pipeline."""
     settings = settings or Settings.from_env()
     llm = llm or get_default_client()
+    metadata = get_document_metadata(file_path)
     text = load_document(file_path)
     count_document_tokens(text, llm, settings.max_document_tokens)
     chunks = split_document(
@@ -76,20 +81,21 @@ def run_document(
     )
 
     if len(chunks) <= 1:
-        result = app.invoke(_state(text, llm, TokenUsage()))
+        result = app.invoke(_state(text, llm, TokenUsage(), metadata))
         return PipelineResult(
             analysis=result["analysis"],
             summary=result["summary"],
             fact_check=FactCheckResult.model_validate(result["fact_check"]),
             final=result["final"],
             token_usage=result["token_usage"],
+            metadata=result["metadata"],
         )
 
     usage = TokenUsage()
     partial_analyses: List[str] = []
     partial_checks: List[tuple[FactCheckResult, int]] = []
     for chunk_text, chunk_tokens in chunks:
-        partial = chunk_app.invoke(_state(chunk_text, llm, TokenUsage()))
+        partial = chunk_app.invoke(_state(chunk_text, llm, TokenUsage(), metadata))
         _merge_usage(usage, partial["token_usage"])
         partial_analyses.append(partial["analysis"])
         partial_checks.append(
@@ -133,7 +139,7 @@ def run_document(
             "explanation": explanation,
         },
     )
-    synthesis_state = _state("", llm, usage)
+    synthesis_state = _state("", llm, usage, metadata)
     synthesis_state["analysis"] = analysis
     synthesis_state["fact_check"] = fact_check.model_dump()
     synthesis = synthesis_app.invoke(synthesis_state)
@@ -143,6 +149,7 @@ def run_document(
         fact_check=fact_check,
         final=synthesis["final"],
         token_usage=synthesis["token_usage"],
+        metadata=synthesis["metadata"],
     )
 
 

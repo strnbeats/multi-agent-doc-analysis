@@ -2,6 +2,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from ..errors import CorruptDocumentError, EmptyDocumentError, ExtractionError, UnsupportedFormatError
+from .metadata import detect_file_type
 
 
 def load_pdf(file_path: str) -> str:
@@ -63,15 +64,11 @@ def load_txt(file_path: str) -> str:
 
 def load_document(file_path: str) -> str:
     """Выбрать загрузчик документа по поддерживаемому расширению."""
-    path = Path(file_path)
-
-    if path.suffix.lower() == ".pdf":
+    file_type = detect_file_type(file_path)
+    if file_type == "pdf":
         return load_pdf(file_path)
 
-    if path.suffix.lower() == ".txt":
-        return load_txt(file_path)
-
-    raise UnsupportedFormatError()
+    return load_txt(file_path)
 
 
 def validate_document(file_path: str) -> None:

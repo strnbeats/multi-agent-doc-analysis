@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from .models import DocumentStatus, FactCheckResult, NeuroslopResult, TokenCount
+from .models import DocumentMetadata, DocumentStatus, FactCheckResult, NeuroslopResult, TokenCount
 
 
 class ErrorDetail(BaseModel):
@@ -58,6 +58,7 @@ class DocumentDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
     status: DocumentStatus
+    metadata: Optional[DocumentMetadata] = None
     neuroslop: Optional[NeuroslopResult] = None
     results: Optional[AnalysisResults] = None
     token_usage: TokenUsageResponse

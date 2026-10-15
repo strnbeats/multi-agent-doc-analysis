@@ -1,8 +1,16 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+DocumentType = Literal["pdf", "txt"]
+
+
+class DocumentMetadata(BaseModel):
+    file_type: DocumentType
+    size_bytes: int = Field(ge=0)
 
 
 class DocumentStatus(str, Enum):
@@ -55,6 +63,7 @@ class PipelineResult(BaseModel):
     fact_check: FactCheckResult
     final: str
     token_usage: TokenUsage
+    metadata: Optional[DocumentMetadata] = None
 
 
 class DocumentRecord(BaseModel):

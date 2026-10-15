@@ -7,11 +7,12 @@ from .agents.fact_checker import fact_checker
 from .agents.final import final_agent
 from .agents.summary import summary
 from .llm.client import LLMClient
-from .models import TokenUsage
+from .models import DocumentMetadata, TokenUsage
 
 
 class State(TypedDict):
     text: str
+    metadata: DocumentMetadata
     analysis: str
     summary: str
     fact_check: Dict[str, Any]

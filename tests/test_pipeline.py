@@ -3,6 +3,7 @@ from dataclasses import replace
 
 import pytest
 
+import multi_agent_docs.runner as runner_module
 from multi_agent_docs.errors import PipelineError
 from multi_agent_docs.runner import run_document
 
@@ -42,3 +43,33 @@ def test_pipeline_reduces_multiple_chunks(tmp_path: Path, settings):
     assert result.summary
     assert "Analysis Reducer" in result.token_usage.by_agent
     assert result.fact_check.neuroslop.probability == 0.25
+
+
+@pytest.mark.parametrize("target_tokens", [8_000, 8])
+def test_pipeline_preserves_original_metadata(tmp_path: Path, settings, monkeypatch, target_tokens):
+    payload = "\n\n".join(["один два три четыре" for _ in range(8)]).encode("utf-8")
+    path = tmp_path / "source.TxT"
+    path.write_bytes(payload)
+    expected = {"file_type": "txt", "size_bytes": len(payload)}
+    visited = []
+
+    for name in ("app", "chunk_app", "synthesis_app"):
+        graph = getattr(runner_module, name)
+
+        def check_metadata(state, invoke=graph.invoke, graph_name=name):
+            assert state["metadata"].model_dump() == expected
+            visited.append(graph_name)
+            output = invoke(state)
+            assert output["metadata"].model_dump() == expected
+            return output
+
+        monkeypatch.setattr(graph, "invoke", check_metadata)
+
+    active_settings = replace(settings, chunk_target_tokens=target_tokens, chunk_overlap_tokens=1)
+    result = run_document(str(path), FakeLLM(), active_settings)
+    assert result.metadata.model_dump() == expected
+    if target_tokens == 8:
+        assert visited.count("chunk_app") > 1
+        assert visited[-1] == "synthesis_app"
+    else:
+        assert visited == ["app"]

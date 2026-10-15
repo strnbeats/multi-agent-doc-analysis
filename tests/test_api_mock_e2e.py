@@ -3,6 +3,8 @@ import time
 from fastapi.testclient import TestClient
 
 from multi_agent_docs.bootstrap import create_analysis_service
+from multi_agent_docs.database.db import Database
+from multi_agent_docs.database.repository import DocumentRepository
 from multi_agent_docs.main import app
 
 
@@ -23,6 +25,7 @@ def test_full_api_pipeline_with_mock_agents(monkeypatch, settings):
     """Пройти HTTP → service → runner → LangGraph → mock LLM → SQLite."""
     service = create_analysis_service(settings)
     monkeypatch.setattr("multi_agent_docs.main.create_analysis_service", lambda: service)
+    expected_metadata = {"file_type": "txt", "size_bytes": len("Полный тест API".encode("utf-8"))}
 
     with TestClient(app) as client:
         accepted = client.post(
@@ -39,11 +42,18 @@ def test_full_api_pipeline_with_mock_agents(monkeypatch, settings):
         assert detail["results"]["final"].startswith("Итоговый mock")
         assert detail["neuroslop"]["probability"] == 0.15
         assert detail["token_usage"]["total_tokens"] == 120
+        assert detail["filename"] == "document.txt"
+        assert detail["metadata"] == expected_metadata
 
         history = client.get("/documents", params={"limit": 10, "offset": 0})
         assert history.status_code == 200
         assert history.json()["total"] == 1
         assert history.json()["items"][0]["status"] == "completed"
+
+    assert not list(settings.upload_dir.glob("analysis-*"))
+    reopened_repository = DocumentRepository(Database(settings.database_path))
+    stored = reopened_repository.get_by_id(accepted.json()["id"])
+    assert stored.result["metadata"] == expected_metadata
 
 
 def test_mock_api_validation_and_public_errors(monkeypatch, settings):
