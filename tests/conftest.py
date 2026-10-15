@@ -1,10 +1,27 @@
 import json
+from io import BytesIO
 from pathlib import Path
 
 import pytest
+from docx import Document
 
 from multi_agent_docs.config import Settings
 from multi_agent_docs.models import LLMAnswer, TokenCount
+
+
+@pytest.fixture
+def docx_payload() -> bytes:
+    document = Document()
+    document.add_paragraph("Начало документа")
+    table = document.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "Товар"
+    table.cell(0, 1).text = "Цена"
+    table.cell(1, 0).text = "Книга"
+    table.cell(1, 1).text = "350"
+    document.add_paragraph("Конец документа")
+    target = BytesIO()
+    document.save(target)
+    return target.getvalue()
 
 
 class FakeLLM:

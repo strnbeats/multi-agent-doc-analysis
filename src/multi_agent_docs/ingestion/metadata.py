@@ -6,7 +6,16 @@ from ..errors import ExtractionError, UnsupportedFormatError
 from ..models import DocumentMetadata, DocumentType
 
 
-_FILE_TYPES: Dict[str, DocumentType] = {".pdf": "pdf", ".txt": "txt"}
+_FILE_TYPES: Dict[str, DocumentType] = {
+    ".pdf": "pdf",
+    ".txt": "txt",
+    ".docx": "docx",
+    ".html": "html",
+    ".htm": "html",
+    ".md": "md",
+    ".markdown": "md",
+    ".csv": "csv",
+}
 
 
 def detect_file_type(file_path: str) -> DocumentType:

@@ -1,7 +1,10 @@
 from pathlib import Path
+from typing import Callable, Dict
 from pypdf import PdfReader
 
 from ..errors import CorruptDocumentError, EmptyDocumentError, ExtractionError, UnsupportedFormatError
+from ..models import DocumentType
+from .additional_formats import load_csv, load_docx, load_html, load_markdown
 from .metadata import detect_file_type
 
 
@@ -62,13 +65,19 @@ def load_txt(file_path: str) -> str:
     return text
 
 
-def load_document(file_path: str) -> str:
-    """Выбрать загрузчик документа по поддерживаемому расширению."""
-    file_type = detect_file_type(file_path)
-    if file_type == "pdf":
-        return load_pdf(file_path)
+_LOADERS: Dict[DocumentType, Callable[[str], str]] = {
+    "pdf": load_pdf,
+    "txt": load_txt,
+    "docx": load_docx,
+    "html": load_html,
+    "md": load_markdown,
+    "csv": load_csv,
+}
 
-    return load_txt(file_path)
+
+def load_document(file_path: str) -> str:
+    """Выбрать зарегистрированный загрузчик по типу документа."""
+    return _LOADERS[detect_file_type(file_path)](file_path)
 
 
 def validate_document(file_path: str) -> None:

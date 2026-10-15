@@ -1,5 +1,6 @@
 import time
 
+import pytest
 from fastapi.testclient import TestClient
 
 from multi_agent_docs.bootstrap import create_analysis_service
@@ -76,3 +77,86 @@ def test_mock_api_validation_and_public_errors(monkeypatch, settings):
         )
         assert wrong_type.status_code == 415
         assert "traceback" not in wrong_type.text.lower()
+
+
+@pytest.mark.parametrize(
+    ("filename", "content_type", "file_type"),
+    [
+        ("report.DOCX", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"),
+        ("report.docx", "application/zip", "docx"),
+        ("page.HTM", "text/html; charset=utf-8", "html"),
+        ("notes.md", "text/markdown", "md"),
+        ("notes.MARKDOWN", "text/plain", "md"),
+        ("export.csv", "text/csv; charset=utf-8", "csv"),
+        ("export.CSV", "application/vnd.ms-excel", "csv"),
+    ],
+)
+def test_api_analyzes_additional_formats(
+    monkeypatch, settings, docx_payload, filename, content_type, file_type
+):
+    payloads = {
+        "docx": docx_payload,
+        "html": "<h1>Статья</h1><p>Содержательный текст статьи.</p>".encode("utf-8"),
+        "md": "# Заметка\n\nСодержательный **текст** заметки.".encode("utf-8"),
+        "csv": "\ufeffТовар;Цена\r\nКнига;350\r\n".encode("utf-8"),
+    }
+    payload = payloads[file_type]
+    service = create_analysis_service(settings)
+    monkeypatch.setattr("multi_agent_docs.main.create_analysis_service", lambda: service)
+    with TestClient(app) as client:
+        accepted = client.post("/analyze", files={"file": (filename, payload, content_type)})
+        assert accepted.status_code == 202, accepted.text
+        detail = _wait_for_terminal_state(client, accepted.json()["id"])
+        assert detail["status"] == "completed", detail
+        assert detail["filename"] == filename
+        assert detail["metadata"] == {"file_type": file_type, "size_bytes": len(payload)}
+        assert detail["results"]["analysis"].startswith("Mock-анализ")
+        assert detail["token_usage"]["total_tokens"] > 0
+    assert not list(settings.upload_dir.glob("analysis-*"))
+    stored = DocumentRepository(Database(settings.database_path)).get_by_id(accepted.json()["id"])
+    assert stored.result["metadata"] == detail["metadata"]
+
+
+@pytest.mark.parametrize(
+    ("filename", "payload", "content_type", "error_code"),
+    [
+        ("broken.docx", b"not a word document", "application/octet-stream", "corrupt_document"),
+        ("empty.html", b"<script>hidden()</script>", "text/html", "empty_document"),
+        ("empty.md", b"---\n", "text/markdown", "empty_document"),
+        ("empty.csv", b'"",""\n', "text/csv", "empty_document"),
+        ("broken.csv", b'Name,Value\n"unclosed', "text/csv", "corrupt_document"),
+        ("broken.md", b"\x00binary", "text/plain", "corrupt_document"),
+    ],
+)
+def test_api_rejects_invalid_additional_formats(
+    monkeypatch, settings, filename, payload, content_type, error_code
+):
+    service = create_analysis_service(settings)
+    monkeypatch.setattr("multi_agent_docs.main.create_analysis_service", lambda: service)
+    with TestClient(app) as client:
+        response = client.post("/analyze", files={"file": (filename, payload, content_type)})
+        assert response.status_code == 400
+        assert response.json()["detail"]["code"] == error_code
+        assert client.get("/documents").json()["total"] == 0
+        assert not list(settings.upload_dir.glob("analysis-*"))
+
+
+def test_api_rejects_oversized_unpacked_docx(monkeypatch, settings, docx_payload):
+    service = create_analysis_service(settings)
+    monkeypatch.setattr("multi_agent_docs.main.create_analysis_service", lambda: service)
+    monkeypatch.setattr("multi_agent_docs.ingestion.additional_formats._MAX_DOCX_UNPACKED_BYTES", 100)
+    with TestClient(app) as client:
+        response = client.post(
+            "/analyze", files={"file": ("large.docx", docx_payload, "application/octet-stream")}
+        )
+        assert response.status_code == 413
+        assert response.json()["detail"]["code"] == "document_too_large"
+
+
+def test_openapi_describes_additional_file_types(monkeypatch, settings):
+    service = create_analysis_service(settings)
+    monkeypatch.setattr("multi_agent_docs.main.create_analysis_service", lambda: service)
+    with TestClient(app) as client:
+        schema = client.get("/openapi.json").json()
+    file_types = schema["components"]["schemas"]["DocumentMetadata"]["properties"]["file_type"]["enum"]
+    assert set(file_types) == {"pdf", "txt", "docx", "html", "md", "csv"}

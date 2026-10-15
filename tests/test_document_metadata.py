@@ -9,13 +9,18 @@ from multi_agent_docs.ingestion.metadata import detect_file_type, get_document_m
 
 @pytest.mark.parametrize(
     ("filename", "expected"),
-    [("report.pdf", "pdf"), ("REPORT.PDF", "pdf"), ("заметки.txt", "txt"), ("notes.TxT", "txt")],
+    [
+        ("report.pdf", "pdf"), ("REPORT.PDF", "pdf"),
+        ("заметки.txt", "txt"), ("notes.TxT", "txt"),
+        ("report.DOCX", "docx"), ("page.html", "html"), ("page.HTM", "html"),
+        ("README.md", "md"), ("notes.MARKDOWN", "md"), ("export.CSV", "csv"),
+    ],
 )
 def test_detects_supported_type(filename, expected):
     assert detect_file_type(filename) == expected
 
 
-@pytest.mark.parametrize("filename", ["report", "report.docx", "report.txt.bak"])
+@pytest.mark.parametrize("filename", ["report", "report.doc", "report.txt.bak"])
 def test_rejects_unsupported_type(filename):
     with pytest.raises(UnsupportedFormatError):
         detect_file_type(filename)

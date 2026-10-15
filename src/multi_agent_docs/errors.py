@@ -13,7 +13,7 @@ class AppError(Exception):
 
 class UnsupportedFormatError(AppError):
     code = "unsupported_format"
-    public_message = "Поддерживаются только PDF и TXT"
+    public_message = "Поддерживаются PDF, TXT, DOCX, HTML, Markdown и CSV"
 
 
 class EmptyDocumentError(AppError):

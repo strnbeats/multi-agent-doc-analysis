@@ -17,7 +17,7 @@ from .api_schemas import (
     TokenUsageResponse,
 )
 from .bootstrap import create_analysis_service
-from .errors import AppError, StorageError, UnsupportedFormatError
+from .errors import AppError, DocumentTooLargeError, StorageError, UnsupportedFormatError
 from .ingestion.metadata import detect_file_type
 from .models import NeuroslopResult, TokenCount
 
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Multi-Agent Document Analysis",
-    description="Асинхронный API анализа PDF и TXT документов",
+    description="Асинхронный API анализа PDF, TXT, DOCX, HTML, Markdown и CSV документов",
     version="0.2.0",
     lifespan=lifespan,
 )
@@ -143,7 +143,10 @@ def health(request: Request):
     },
     tags=["analysis"],
 )
-async def analyze_document(request: Request, file: UploadFile = File(...)):
+async def analyze_document(
+    request: Request,
+    file: UploadFile = File(..., description="PDF, TXT, DOCX, HTML (.html/.htm), Markdown (.md/.markdown) или CSV"),
+):
     """Принять документ, ограничить загрузку и поставить анализ в очередь."""
     service = _service(request)
     filename = Path(file.filename or "").name
@@ -156,8 +159,19 @@ async def analyze_document(request: Request, file: UploadFile = File(...)):
     allowed_types = {
         "pdf": {"application/pdf", "application/octet-stream"},
         "txt": {"text/plain", "application/octet-stream"},
+        "docx": {
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/zip", "application/octet-stream",
+        },
+        "html": {"text/html", "application/xhtml+xml", "text/plain", "application/octet-stream"},
+        "md": {"text/markdown", "text/x-markdown", "text/plain", "application/octet-stream"},
+        "csv": {
+            "text/csv", "application/csv", "text/plain",
+            "application/vnd.ms-excel", "application/octet-stream",
+        },
     }
-    if file.content_type and file.content_type not in allowed_types[file_type]:
+    content_type = (file.content_type or "").partition(";")[0].strip().lower()
+    if content_type and content_type not in allowed_types[file_type]:
         raise _error(UnsupportedFormatError("Тип содержимого не соответствует расширению файла"), 415)
 
     service.settings.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -197,7 +211,10 @@ async def analyze_document(request: Request, file: UploadFile = File(...)):
     except UnsupportedFormatError as error:
         raise _error(error, 415) from error
     except AppError as error:
-        status_code = 500 if isinstance(error, StorageError) else 400
+        if isinstance(error, DocumentTooLargeError):
+            status_code = 413
+        else:
+            status_code = 500 if isinstance(error, StorageError) else 400
         raise _error(error, status_code) from error
     except Exception as error:
         logger.exception("Unexpected upload error")
