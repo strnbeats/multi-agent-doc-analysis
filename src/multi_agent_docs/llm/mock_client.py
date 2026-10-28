@@ -10,7 +10,7 @@ class MockLLMClient:
         """Приблизительно посчитать токены без сетевого запроса."""
         return max(1, len(text.split()))
 
-    def ask(self, prompt: str) -> LLMAnswer:
+    def ask(self, prompt: str, *, system_prompt: str = "") -> LLMAnswer:
         """Вернуть предсказуемый ответ подходящего для агента формата."""
         usage = TokenCount(input_tokens=20, output_tokens=10, total_tokens=30)
         if "Верни только JSON" in prompt or "Исправь ответ" in prompt:
