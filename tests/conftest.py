@@ -31,7 +31,7 @@ class FakeLLM:
     def count_tokens(self, text: str) -> int:
         return max(1, len(text.split()))
 
-    def ask(self, prompt: str) -> LLMAnswer:
+    def ask(self, prompt: str, *, system_prompt: str = "") -> LLMAnswer:
         usage = TokenCount(input_tokens=10, output_tokens=5, total_tokens=15)
         if "Верни только JSON" in prompt or "Исправь ответ" in prompt:
             if self.invalid_fact_checks:
