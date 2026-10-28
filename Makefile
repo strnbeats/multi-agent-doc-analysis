@@ -1,13 +1,14 @@
 PYTHON ?= .venv/bin/python
 PIP ?= .venv/bin/pip
 
-.PHONY: help install migrate run run-mock test test-api postman-check check
+.PHONY: help install migrate run run-mock run-dashboard test test-api postman-check check
 
 help:
 	@echo "make install       - создать .venv и установить зависимости"
 	@echo "make migrate       - применить Alembic-миграции"
 	@echo "make run           - запустить API с реальным GigaChat"
 	@echo "make run-mock      - запустить API с локальным mock LLM"
+	@echo "make run-dashboard - запустить Gradio (нужен dashboard extra, Python 3.10+)"
 	@echo "make test          - запустить все тесты"
 	@echo "make test-api      - запустить только сквозные API-тесты"
 	@echo "make postman-check - проверить JSON Postman-коллекции"
@@ -25,6 +26,9 @@ run:
 
 run-mock:
 	PYTHON_BIN=$(PYTHON) ./cmd/run.sh mock
+
+run-dashboard:
+	$(PYTHON) -m multi_agent_docs.dashboard
 
 test:
 	PYTHON_BIN=$(PYTHON) ./cmd/test.sh
