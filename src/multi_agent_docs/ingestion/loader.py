@@ -1,45 +1,85 @@
 from pathlib import Path
+from typing import Callable, Dict
 from pypdf import PdfReader
+
+from ..errors import CorruptDocumentError, EmptyDocumentError, ExtractionError, UnsupportedFormatError
+from ..models import DocumentType
+from .additional_formats import load_csv, load_docx, load_html, load_markdown
+from .metadata import detect_file_type
 
 
 def load_pdf(file_path: str) -> str:
+    """Проверить PDF и извлечь непустой текст всех страниц."""
     path = Path(file_path)
 
     if not path.exists():
         raise FileNotFoundError(f"Файл не найден: {path}")
 
     if path.suffix.lower() != ".pdf":
-        raise ValueError("Файл должен быть PDF")
+        raise UnsupportedFormatError()
 
-    reader = PdfReader(path)
-    pages = []
+    try:
+        with path.open("rb") as source:
+            if source.read(5) != b"%PDF-":
+                raise CorruptDocumentError()
+    except OSError as error:
+        raise ExtractionError() from error
 
-    for page in reader.pages:
-        text = page.extract_text() or ""
-        pages.append(text)
+    try:
+        reader = PdfReader(path)
+        pages = []
 
-    return "\n".join(pages)
+        for page in reader.pages:
+            text = page.extract_text() or ""
+            pages.append(text)
+    except Exception as error:
+        raise CorruptDocumentError() from error
+
+    result = "\n\n".join(pages).strip()
+    if not result:
+        raise EmptyDocumentError()
+    return result
 
 
 def load_txt(file_path: str) -> str:
+    """Прочитать непустой UTF-8 TXT и отклонить бинарный файл."""
     path = Path(file_path)
 
     if not path.exists():
         raise FileNotFoundError(f"Файл не найден: {path}")
 
     if path.suffix.lower() != ".txt":
-        raise ValueError("Файл должен быть TXT")
+        raise UnsupportedFormatError()
 
-    return path.read_text(encoding="utf-8")
+    try:
+        content = path.read_bytes()
+        if b"\x00" in content:
+            raise CorruptDocumentError()
+        text = content.decode("utf-8").strip()
+    except UnicodeDecodeError as error:
+        raise CorruptDocumentError("TXT должен быть в кодировке UTF-8") from error
+    except OSError as error:
+        raise ExtractionError() from error
+    if not text:
+        raise EmptyDocumentError()
+    return text
+
+
+_LOADERS: Dict[DocumentType, Callable[[str], str]] = {
+    "pdf": load_pdf,
+    "txt": load_txt,
+    "docx": load_docx,
+    "html": load_html,
+    "md": load_markdown,
+    "csv": load_csv,
+}
 
 
 def load_document(file_path: str) -> str:
-    path = Path(file_path)
+    """Выбрать зарегистрированный загрузчик по типу документа."""
+    return _LOADERS[detect_file_type(file_path)](file_path)
 
-    if path.suffix.lower() == ".pdf":
-        return load_pdf(file_path)
 
-    if path.suffix.lower() == ".txt":
-        return load_txt(file_path)
-
-    raise ValueError("Поддерживаются только PDF и TXT")
+def validate_document(file_path: str) -> None:
+    """Убедиться, что документ корректен и содержит текст."""
+    load_document(file_path)
