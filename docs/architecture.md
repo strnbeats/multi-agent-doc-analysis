@@ -1,71 +1,46 @@
-# Архитектура проекта
+# Архитектура backend MVP
 
-## 1. Общая информация
+## Слои
 
-Название: Multi-Agent Document Analysis
-Интерфейс: CLI/Dashboard
-Язык: Python
-Статус: Prototype
+```text
+HTTP / FastAPI
+      ↓
+AnalysisService + однопоточная очередь
+      ├──→ runner → LangGraph → agents → GigaChat
+      ↓
+DocumentRepository
+      ↓
+SQLite
+```
 
-## 2. Общая схема
+FastAPI отвечает только за HTTP: потоковую загрузку, HTTP-валидацию и схемы ответов. Он обращается к истории и запускает анализ исключительно через `AnalysisService`.
 
-Пользователь
-    |
-    v
-CLI/Dashboard
-    |
-    v
-Application Core
-    |
-    v
-Workflow / Orchestrator
-    |
-    +--> Document Ingestion
-    |
-    +--> Retrieval / RAG
-    |
-    +--> Analysis
-    |
-    +--> Verification
-    |
-    v
-Результат пользователю
+`AnalysisService` регистрирует задачу, передаёт её единственному фоновому worker и сохраняет результат либо безопасную ошибку. Незавершённые задачи после рестарта переводятся в `failed`.
 
-## 3. Компоненты
+Runner извлекает текст, проверяет лимит токенов и запускает LangGraph. Большие документы разбиваются на чанки; результаты объединяются редьюсерами. Исходный файл удаляется после завершения задачи.
 
-### CLI
-Принимает команды и отображает результаты.
+Схема SQLite изменяется только версионируемыми Alembic-миграциями. На старте сервис выполняет `upgrade head`; прямого `CREATE TABLE` в runtime-коде нет.
 
-### Application Core
-Связывает интерфейс с логикой приложения.
+## Режимы LLM
 
-### Document Ingestion
-Загружает документы и извлекает текст.
+- `APP_MODE=real` — настоящий `GigaChatClient`;
+- `APP_MODE=mock` — детерминированный `MockLLMClient` без сети.
 
-### Retrieval / RAG
-Ищет релевантные фрагменты документов.
+Оба режима используют одинаковые transport, business, repository и LangGraph. Благодаря этому сквозные API-тесты подменяют только внешнюю модель, а не внутренний pipeline.
 
-### Agents
-Выполняют специализированные задачи.
+## Состояния задачи
 
-### Workflow / Orchestrator
-Управляет последовательностью выполнения.
+```text
+queued → running → completed
+                 ↘ failed
+```
 
-## 4. Технологии
+## Публичный API
 
-- Python
-- Fastapi
-- OpenAI
-- Pypdf
-- LangChain
-- LangGraph
-- SQLite(неоднозначно)
-- Gradio(для создания Dashboard)
+- `POST /analyze` — регистрация фонового анализа;
+- `GET /documents` — страница истории;
+- `GET /documents/{id}` — статус или полный результат;
+- `GET /health` — проверка SQLite и worker;
+- `GET /docs` — Swagger UI.
 
-## 5. Открытые вопросы
-
-- Основной пользовательский сценарий
-- Набор агентов
-- Формат хранения документов
-- Векторная база
-- Распределение ответственности в команде
+Gradio не входит в backend MVP и в будущем должен работать только через HTTP API.
