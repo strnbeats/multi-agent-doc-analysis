@@ -1,0 +1,62 @@
+{
+  "info": {
+    "name": "Multi-Agent Document Analysis API",
+    "description": "Запросы backend MVP. Сначала выполните Analyze document: ID сохранится в переменную document_id.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health",
+          "request": {"method": "GET", "url": "{{base_url}}/health"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Backend is healthy', () => {", "  pm.response.to.have.status(200);", "  pm.expect(pm.response.json().status).to.eql('ok');", "});"]}}]
+        },
+        {
+          "name": "OpenAPI schema",
+          "request": {"method": "GET", "url": "{{base_url}}/openapi.json"}
+        }
+      ]
+    },
+    {
+      "name": "Analysis",
+      "item": [
+        {
+          "name": "Analyze document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {"mode": "formdata", "formdata": [{"key": "file", "type": "file", "src": "{{document_path}}"}]},
+            "url": "{{base_url}}/analyze"
+          },
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Task accepted', () => pm.response.to.have.status(202));", "const body = pm.response.json();", "pm.environment.set('document_id', body.id);"]}}]
+        },
+        {
+          "name": "Get analysis status or result",
+          "request": {"method": "GET", "url": "{{base_url}}/documents/{{document_id}}"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Analysis found', () => pm.response.to.have.status(200));", "pm.expect(['queued', 'running', 'completed', 'failed']).to.include(pm.response.json().status);"]}}]
+        }
+      ]
+    },
+    {
+      "name": "History",
+      "item": [
+        {
+          "name": "List documents",
+          "request": {"method": "GET", "url": "{{base_url}}/documents"}
+        },
+        {
+          "name": "List documents paginated",
+          "request": {"method": "GET", "url": {"raw": "{{base_url}}/documents?limit=10&offset=0", "host": ["{{base_url}}"], "path": ["documents"], "query": [{"key": "limit", "value": "10"}, {"key": "offset", "value": "0"}]}}
+        },
+        {
+          "name": "Document not found",
+          "request": {"method": "GET", "url": "{{base_url}}/documents/999999999"},
+          "event": [{"listen": "test", "script": {"exec": ["pm.test('Returns 404', () => pm.response.to.have.status(404));"]}}]
+        }
+      ]
+    }
+  ],
+  "variable": [{"key": "base_url", "value": "http://127.0.0.1:8000"}]
+}
