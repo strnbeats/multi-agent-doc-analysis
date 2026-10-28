@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import Protocol
 
 from gigachat import GigaChat
+from gigachat.models import Chat, Messages, MessagesRole
 
 from ..config import Settings
 from ..errors import LLMError
@@ -9,8 +10,8 @@ from ..models import LLMAnswer, TokenCount
 
 
 class LLMClient(Protocol):
-    def ask(self, prompt: str) -> LLMAnswer:
-        """Отправить prompt в реализацию языковой модели."""
+    def ask(self, prompt: str, *, system_prompt: str = "") -> LLMAnswer:
+        """Отправить данные отдельно от необязательных системных инструкций."""
         ...
 
     def count_tokens(self, text: str) -> int:
@@ -32,10 +33,14 @@ class GigaChatClient:
         except Exception as error:
             raise LLMError("Не удалось настроить подключение к GigaChat") from error
 
-    def ask(self, prompt: str) -> LLMAnswer:
+    def ask(self, prompt: str, *, system_prompt: str = "") -> LLMAnswer:
         """Отправить prompt и вернуть текст вместе со статистикой токенов."""
         try:
-            response = self._client.chat(prompt)
+            messages = []
+            if system_prompt:
+                messages.append(Messages(role=MessagesRole.SYSTEM, content=system_prompt))
+            messages.append(Messages(role=MessagesRole.USER, content=prompt))
+            response = self._client.chat(Chat(messages=messages))
             return LLMAnswer(
                 content=response.choices[0].message.content,
                 usage=TokenCount(
