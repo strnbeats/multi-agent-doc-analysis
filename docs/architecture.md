@@ -43,4 +43,7 @@ queued → running → completed
 - `GET /health` — проверка SQLite и worker;
 - `GET /docs` — Swagger UI.
 
-Gradio не входит в backend MVP и в будущем должен работать только через HTTP API.
+Gradio является необязательным HTTP-клиентом backend. Он отправляет документ
+через POST /analyze, получает статусы и результаты через GET /documents/{id}
+и не импортирует runner, LLM-клиент или слой хранения. UI и backend запускаются
+отдельно; дополнительная очередь или второй pipeline в UI не создаются.
