@@ -112,7 +112,7 @@ def load_csv(file_path: str) -> str:
     try:
         rows = csv.reader(StringIO(text, newline=""), dialect=dialect, strict=True)
         lines = [
-            "\t".join(row)
+            "\t".join(cell.replace("\r\n", "\n").replace("\r", "\n") for cell in row)
             for row in rows
             if any(cell.strip() for cell in row)
         ]
