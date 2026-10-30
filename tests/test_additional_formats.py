@@ -148,7 +148,13 @@ def test_csv_handles_quoted_delimiters_newlines_and_empty_cells(tmp_path: Path):
     assert "Первая строка, с запятой\nВторая строка" in text
     assert text.startswith("Имя\tОписание\tЦена\nКнига\t")
     assert text.endswith("Вторая строка\t")
+@pytest.mark.parametrize("embedded_newline", ["\n", "\r\n", "\r"])
+def test_csv_normalizes_newlines_inside_quoted_cells(tmp_path: Path, embedded_newline):
+    path = tmp_path / "newlines.csv"
+    payload = f'name,description\r\nBook,"First{embedded_newline}Second"\r\n'
+    path.write_bytes(payload.encode("utf-8"))
 
+    assert load_document(str(path)) == "name\tdescription\nBook\tFirst\nSecond"
 
 def test_csv_preserves_leading_empty_columns_and_quoted_whitespace(tmp_path: Path):
     path = tmp_path / "empty-column.csv"
