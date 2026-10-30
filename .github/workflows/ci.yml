@@ -34,3 +34,10 @@ jobs:
         run: |
           export APP_MODE=mock
           python -m pytest
+      - name: Check installed dependencies
+        run: python -m pip check
+
+      - name: Validate Postman JSON
+        run: |
+          python -m json.tool postman/document-analysis.postman_collection.json > /dev/null
+          python -m json.tool postman/local.postman_environment.json > /dev/null
