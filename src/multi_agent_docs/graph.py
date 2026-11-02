@@ -8,7 +8,12 @@ from .agents.final import final_agent
 from .agents.summary import summary
 from .llm.client import LLMClient
 from .models import DocumentMetadata, TokenUsage
+from .errors import PipelineError
 
+
+class SourceChunk(TypedDict):
+    chunk_id: str
+    text: str
 
 class State(TypedDict):
     text: str
@@ -19,6 +24,24 @@ class State(TypedDict):
     final: str
     llm: Any
     token_usage: TokenUsage
+    source_chunks: list[SourceChunk]
+
+
+
+def prepare_sources(state: State):
+    text = state["text"]
+
+    if not text.strip():
+        raise PipelineError("Документ не содержит текста")
+
+    return {
+        "source_chunks": [
+            {
+                "chunk_id": "chunk_0001",
+                "text": text
+            }
+        ]
+    }
 
 
 def _compile(nodes, edges):
@@ -33,10 +56,22 @@ def _compile(nodes, edges):
     return graph.compile()
 
 
-app = _compile(
-    [("analyzer", analyzer), ("summary", summary), ("fact_checker", fact_checker), ("final", final_agent)],
-    [("analyzer", "summary"), ("summary", "fact_checker"), ("fact_checker", "final")],
-)
+builder = StateGraph(State)
+
+builder.add_node("prepare_sources", prepare_sources)
+builder.add_node("analyzer", analyzer)
+builder.add_node("summary", summary)
+builder.add_node("fact_checker", fact_checker)
+builder.add_node("final", final_agent)
+
+builder.add_edge(START, "prepare_sources")
+builder.add_edge("prepare_sources", "analyzer")
+builder.add_edge("analyzer", "summary")
+builder.add_edge("summary", "fact_checker")
+builder.add_edge("fact_checker", "final")
+builder.add_edge("final", END)
+
+app = builder.compile()
 
 chunk_app = _compile(
     [("analyzer", analyzer), ("fact_checker", fact_checker)],
