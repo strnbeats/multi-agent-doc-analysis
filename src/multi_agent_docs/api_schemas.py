@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from .models import DocumentMetadata, DocumentStatus, FactCheckResult, NeuroslopResult, TokenCount
+from .models import DocumentMetadata, DocumentStatus, FactCheckResult, FinalReview, NeuroslopResult, TokenCount
 
 
 class ErrorDetail(BaseModel):
@@ -31,6 +31,7 @@ class AnalysisResults(BaseModel):
     summary: str
     fact_check: FactCheckResult
     final: str
+    final_review: Optional[FinalReview] = None
 
 
 class DocumentListItem(BaseModel):

@@ -144,6 +144,6 @@ def test_dashboard_uses_real_backend_pipeline(monkeypatch, settings, tmp_path):
                                     transport=httpx.MockTransport(bridge)))
         assert views[-1].status.startswith("completed"), views[-1]
         assert views[-1].analysis.startswith("Mock-анализ")
-        assert views[-1].token_usage["total_tokens"] == 120
+        assert views[-1].token_usage["total_tokens"] == 150
         assert backend.get("/documents").json()["total"] == 1
         assert not list(settings.upload_dir.glob("analysis-*"))

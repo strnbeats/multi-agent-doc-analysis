@@ -57,6 +57,19 @@ class FactCheckResult(BaseModel):
     neuroslop: NeuroslopResult
 
 
+class FinalReview(BaseModel):
+    """Оценка итогового отчёта относительно исходного текста."""
+
+    verification_summary: str
+    doubtful_claims: List[str]
+    contradictions: List[str]
+    status: Literal[
+    "not_evaluated",
+    "no_flags",
+    "needs_review",
+] = "not_evaluated"
+
+
 class PipelineResult(BaseModel):
     analysis: str
     summary: str
@@ -64,6 +77,7 @@ class PipelineResult(BaseModel):
     final: str
     token_usage: TokenUsage
     metadata: Optional[DocumentMetadata] = None
+    final_review: Optional[FinalReview] = None
 
 
 class DocumentRecord(BaseModel):

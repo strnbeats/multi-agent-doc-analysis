@@ -8,7 +8,7 @@ from .ingestion.chunking import count_document_tokens, split_document
 from .ingestion.loader import load_document
 from .ingestion.metadata import get_document_metadata
 from .llm.client import LLMClient, get_default_client
-from .models import DocumentMetadata, FactCheckResult, PipelineResult, TokenUsage
+from .models import DocumentMetadata, FactCheckResult, FinalReview, PipelineResult, TokenUsage
 
 
 def _state(
@@ -89,6 +89,7 @@ def run_document(
             final=result["final"],
             token_usage=result["token_usage"],
             metadata=result["metadata"],
+            final_review=FinalReview.model_validate(result["final_review"]),
         )
 
     usage = TokenUsage()

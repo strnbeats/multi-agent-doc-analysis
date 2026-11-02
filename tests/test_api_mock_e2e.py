@@ -42,7 +42,7 @@ def test_full_api_pipeline_with_mock_agents(monkeypatch, settings):
         assert detail["results"]["summary"].startswith("Краткое mock")
         assert detail["results"]["final"].startswith("Итоговый mock")
         assert detail["neuroslop"]["probability"] == 0.15
-        assert detail["token_usage"]["total_tokens"] == 120
+        assert detail["token_usage"]["total_tokens"] == 150
         assert detail["filename"] == "document.txt"
         assert detail["metadata"] == expected_metadata
 

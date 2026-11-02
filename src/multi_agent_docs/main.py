@@ -90,6 +90,7 @@ def _detail(record) -> DocumentDetail:
             summary=stored["summary"],
             fact_check=fact_check,
             final=stored["final"],
+            final_review=stored.get("final_review"),
         )
         neuroslop = NeuroslopResult.model_validate(fact_check["neuroslop"])
     return DocumentDetail(

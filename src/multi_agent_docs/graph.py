@@ -25,6 +25,7 @@ class State(TypedDict):
     llm: Any
     token_usage: TokenUsage
     source_chunks: list[SourceChunk]
+    final_review: Dict[str, Any]
 
 
 
@@ -42,6 +43,45 @@ def prepare_sources(state: State):
             }
         ]
     }
+
+def verify_final(state: State):
+    review_state = dict(state)
+    review_state["text"] = state["source_chunks"][0]["text"]
+    review_state["analysis"] = state["final"]
+    review_state["token_usage"] = TokenUsage()
+
+    reviewed = fact_checker(review_state)
+
+    usage = state["token_usage"]
+    usage.add("Final Verification", reviewed["token_usage"])
+
+    return {
+        "final_review": reviewed["fact_check"],
+        "token_usage": usage,
+    }
+
+
+def route_review(state: State):
+    review = state["final_review"]
+
+    if review["doubtful_claims"] or review["contradictions"]:
+        return "needs_review"
+
+    return "no_flags"
+
+
+def mark_no_flags(state: State):
+    review = dict(state["final_review"])
+    review["status"] = "no_flags"
+
+    return {"final_review": review}
+
+
+def mark_needs_review(state: State):
+    review = dict(state["final_review"])
+    review["status"] = "needs_review"
+
+    return {"final_review": review}
 
 
 def _compile(nodes, edges):
@@ -63,13 +103,26 @@ builder.add_node("analyzer", analyzer)
 builder.add_node("summary", summary)
 builder.add_node("fact_checker", fact_checker)
 builder.add_node("final", final_agent)
+builder.add_node("verify_final", verify_final)
+builder.add_node("mark_no_flags", mark_no_flags)
+builder.add_node("mark_needs_review", mark_needs_review)
 
 builder.add_edge(START, "prepare_sources")
 builder.add_edge("prepare_sources", "analyzer")
 builder.add_edge("analyzer", "summary")
 builder.add_edge("summary", "fact_checker")
 builder.add_edge("fact_checker", "final")
-builder.add_edge("final", END)
+builder.add_edge("final", "verify_final")
+builder.add_conditional_edges(
+    "verify_final",
+    route_review,
+    {
+        "no_flags": "mark_no_flags",
+        "needs_review": "mark_needs_review",
+    }
+)
+builder.add_edge("mark_no_flags", END)
+builder.add_edge("mark_needs_review", END)
 
 app = builder.compile()
 
