@@ -30,6 +30,12 @@ class State(TypedDict):
 
 
 def prepare_sources(state: State):
+    """Положить весь входной текст в один элемент source_chunks.
+
+    Этот узел не разбивает текст: разбиение выполняет ingestion.chunking.
+    chunk_0001 — локальный идентификатор контейнера, без страниц, смещений,
+    ссылок на исходный файл или проверяемых цитат.
+    """
     text = state["text"]
 
     if not text.strip():

@@ -128,3 +128,54 @@ def test_report_with_flags_needs_review(tmp_path: Path, settings, field):
     assert result.final_review is not None
     assert result.final_review.status == "needs_review"
     assert getattr(result.final_review, field) == ["Тестовое замечание"]
+
+
+@pytest.mark.parametrize(
+    "initial_has_flags, expected_status",
+    [(False, "needs_review"), (True, "no_flags")],
+)
+def test_final_review_is_independent_of_initial_check(
+    tmp_path: Path, settings, initial_has_flags, expected_status
+):
+    class DifferentChecksLLM(MockLLMClient):
+        def __init__(self):
+            self.check_calls = 0
+
+        def ask(self, prompt, *, system_prompt=""):
+            answer = super().ask(prompt, system_prompt=system_prompt)
+            if "Верни только JSON" in prompt:
+                self.check_calls += 1
+                assert self.check_calls <= 2
+                initial = self.check_calls == 1
+                has_flags = initial_has_flags if initial else not initial_has_flags
+                label = "Первичная" if initial else "Итоговая"
+                payload = json.loads(answer.content)
+                payload["verification_summary"] = f"{label} проверка"
+                payload["doubtful_claims"] = [f"{label}: сомнение"] if has_flags else []
+                payload["contradictions"] = [f"{label}: противоречие"] if has_flags else []
+                answer.content = json.dumps(payload, ensure_ascii=False)
+            return answer
+
+    path = tmp_path / "document.txt"
+    path.write_text("Строительство дома занимает 30 дней.", encoding="utf-8")
+    llm = DifferentChecksLLM()
+
+    result = run_document(str(path), llm, settings)
+
+    assert llm.check_calls == 2
+    assert result.final_review is not None
+    assert result.final_review.status == expected_status
+    assert result.fact_check.verification_summary == "Первичная проверка"
+    assert result.final_review.verification_summary == "Итоговая проверка"
+    assert result.fact_check.doubtful_claims == (
+        ["Первичная: сомнение"] if initial_has_flags else []
+    )
+    assert result.fact_check.contradictions == (
+        ["Первичная: противоречие"] if initial_has_flags else []
+    )
+    assert result.final_review.doubtful_claims == (
+        [] if initial_has_flags else ["Итоговая: сомнение"]
+    )
+    assert result.final_review.contradictions == (
+        [] if initial_has_flags else ["Итоговая: противоречие"]
+    )

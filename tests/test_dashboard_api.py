@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 
 import httpx
 import pytest
@@ -145,5 +146,38 @@ def test_dashboard_uses_real_backend_pipeline(monkeypatch, settings, tmp_path):
         assert views[-1].status.startswith("completed"), views[-1]
         assert views[-1].analysis.startswith("Mock-анализ")
         assert views[-1].token_usage["total_tokens"] == 150
+        assert views[-1].final_review_status.startswith("no_flags — ")
         assert backend.get("/documents").json()["total"] == 1
         assert not list(settings.upload_dir.glob("analysis-*"))
+
+
+def test_dashboard_warns_for_unchecked_multi_chunk_report(monkeypatch, settings, tmp_path):
+    chunk_settings = replace(settings, chunk_target_tokens=8, chunk_overlap_tokens=1)
+    service = create_analysis_service(chunk_settings)
+    monkeypatch.setattr("multi_agent_docs.main.create_analysis_service", lambda: service)
+    path = tmp_path / "large.txt"
+    path.write_text("\n\n".join(["один два три четыре"] * 8), encoding="utf-8")
+
+    with TestClient(app) as backend:
+        def bridge(request):
+            response = backend.request(
+                request.method, request.url.path,
+                content=request.read(), headers=dict(request.headers),
+            )
+            return httpx.Response(
+                response.status_code, content=response.content,
+                headers=dict(response.headers),
+            )
+
+        views = list(watch_analysis(
+            str(path), "http://api.test", poll_interval=.01,
+            transport=httpx.MockTransport(bridge),
+        ))
+        view = views[-1]
+        assert view.status.startswith("completed"), view
+        assert view.final
+        assert view.final_review_status == "Итоговый отчёт не проверен"
+        assert view.final_review_doubtful_claims == ""
+        assert view.final_review_contradictions == ""
+        detail = backend.get(f"/documents/{view.document_id}").json()
+        assert detail["results"]["final_review"] is None
