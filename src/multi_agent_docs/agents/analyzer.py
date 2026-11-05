@@ -1,3 +1,6 @@
+from ..agent_contracts import AnalyzerInput, AnalyzerOutput, agent_node
+
+
 SYSTEM_PROMPT = """
 Ты — агент анализа документов.
 Определи тему, ключевые идеи, важные факты и логику документа.
@@ -8,7 +11,8 @@ SYSTEM_PROMPT = """
 """.strip()
 
 
-def analyzer(state):
+@agent_node("analyzer")
+def analyzer(state: AnalyzerInput) -> AnalyzerOutput:
     """Построить содержательный анализ переданного фрагмента документа."""
     prompt = f"""
 Проанализируй следующий текст документа. Работай только с предоставленным текстом.

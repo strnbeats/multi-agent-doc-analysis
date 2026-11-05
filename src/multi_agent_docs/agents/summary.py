@@ -1,3 +1,6 @@
+from ..agent_contracts import SummaryInput, SummaryOutput, agent_node
+
+
 SYSTEM_PROMPT = """
 Ты — агент подготовки краткого содержания документа на основе анализа.
 Сохрани главную тему, ключевые идеи и существенные выводы в 2–4 предложениях.
@@ -7,7 +10,8 @@ SYSTEM_PROMPT = """
 """.strip()
 
 
-def summary(state):
+@agent_node("summary")
+def summary(state: SummaryInput) -> SummaryOutput:
     """Сжать общий анализ документа до краткого содержания."""
     prompt = f"""
 Сделай краткое содержание анализа документа в 2–4 предложениях.

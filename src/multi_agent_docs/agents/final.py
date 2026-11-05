@@ -1,5 +1,6 @@
 import json
 
+from ..agent_contracts import FinalInput, FinalOutput, agent_node
 
 SYSTEM_PROMPT = """
 Ты — агент формирования итогового отчёта по документу.
@@ -13,7 +14,8 @@ SYSTEM_PROMPT = """
 """.strip()
 
 
-def final_agent(state):
+@agent_node("final")
+def final_agent(state: FinalInput) -> FinalOutput:
     """Собрать анализ, summary и фактчек в итоговый ответ."""
     prompt = f"""
 Сформируй итоговый результат анализа документа.

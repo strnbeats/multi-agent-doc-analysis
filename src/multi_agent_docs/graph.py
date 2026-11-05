@@ -1,35 +1,19 @@
-from typing import Any, Dict, TypedDict
-
 from langgraph.graph import END, START, StateGraph
 
+from .agent_contracts import (
+    AgentState as State, FinalVerificationInput, FinalVerificationOutput,
+    ReviewInput, ReviewOutput, SourceChunk, SourceInput, SourceOutput, agent_node,
+)
 from .agents.analyzer import analyzer
 from .agents.fact_checker import fact_checker
 from .agents.final import final_agent
 from .agents.summary import summary
-from .llm.client import LLMClient
-from .models import DocumentMetadata, TokenUsage
+from .models import TokenUsage
 from .errors import PipelineError
 
 
-class SourceChunk(TypedDict):
-    chunk_id: str
-    text: str
-
-class State(TypedDict):
-    text: str
-    metadata: DocumentMetadata
-    analysis: str
-    summary: str
-    fact_check: Dict[str, Any]
-    final: str
-    llm: Any
-    token_usage: TokenUsage
-    source_chunks: list[SourceChunk]
-    final_review: Dict[str, Any]
-
-
-
-def prepare_sources(state: State):
+@agent_node("prepare_sources")
+def prepare_sources(state: SourceInput) -> SourceOutput:
     """Положить весь входной текст в один элемент source_chunks.
 
     Этот узел не разбивает текст: разбиение выполняет ingestion.chunking.
@@ -50,7 +34,8 @@ def prepare_sources(state: State):
         ]
     }
 
-def verify_final(state: State):
+@agent_node("verify_final")
+def verify_final(state: FinalVerificationInput) -> FinalVerificationOutput:
     review_state = dict(state)
     review_state["text"] = state["source_chunks"][0]["text"]
     review_state["analysis"] = state["final"]
@@ -76,14 +61,16 @@ def route_review(state: State):
     return "no_flags"
 
 
-def mark_no_flags(state: State):
+@agent_node("mark_no_flags")
+def mark_no_flags(state: ReviewInput) -> ReviewOutput:
     review = dict(state["final_review"])
     review["status"] = "no_flags"
 
     return {"final_review": review}
 
 
-def mark_needs_review(state: State):
+@agent_node("mark_needs_review")
+def mark_needs_review(state: ReviewInput) -> ReviewOutput:
     review = dict(state["final_review"])
     review["status"] = "needs_review"
 

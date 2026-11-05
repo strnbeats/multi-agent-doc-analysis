@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 from pydantic import ValidationError
 
+from ..agent_contracts import FactCheckerInput, FactCheckerOutput, agent_node
 from ..errors import PipelineError
 from ..models import FactCheckResult
 
@@ -48,7 +49,8 @@ def _parse_result(text: str) -> FactCheckResult:
     return FactCheckResult.model_validate(_json_payload(text))
 
 
-def fact_checker(state):
+@agent_node("fact_checker")
+def fact_checker(state: FactCheckerInput) -> FactCheckerOutput:
     """Проверить анализ и оценить нейрослоп исходного текста."""
     prompt = f"""
 Проверь анализ относительно исходного текста и отдельно оцени вероятность того,
