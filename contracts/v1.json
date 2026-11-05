@@ -1,0 +1,1205 @@
+{
+  "graphs": {
+    "chunk": [
+      {
+        "conditional": false,
+        "source": "__start__",
+        "target": "analyzer"
+      },
+      {
+        "conditional": false,
+        "source": "analyzer",
+        "target": "fact_checker"
+      },
+      {
+        "conditional": false,
+        "source": "fact_checker",
+        "target": "__end__"
+      }
+    ],
+    "document": [
+      {
+        "conditional": false,
+        "source": "__start__",
+        "target": "prepare_document"
+      },
+      {
+        "conditional": true,
+        "source": "prepare_document",
+        "target": "process_chunk"
+      },
+      {
+        "conditional": true,
+        "source": "prepare_document",
+        "target": "single_document"
+      },
+      {
+        "conditional": true,
+        "source": "process_chunk",
+        "target": "process_chunk"
+      },
+      {
+        "conditional": true,
+        "source": "process_chunk",
+        "target": "reduce_results"
+      },
+      {
+        "conditional": false,
+        "source": "reduce_results",
+        "target": "synthesis"
+      },
+      {
+        "conditional": false,
+        "source": "single_document",
+        "target": "__end__"
+      },
+      {
+        "conditional": false,
+        "source": "synthesis",
+        "target": "__end__"
+      }
+    ],
+    "short": [
+      {
+        "conditional": false,
+        "source": "__start__",
+        "target": "prepare_sources"
+      },
+      {
+        "conditional": false,
+        "source": "analyzer",
+        "target": "summary"
+      },
+      {
+        "conditional": false,
+        "source": "fact_checker",
+        "target": "final"
+      },
+      {
+        "conditional": false,
+        "source": "final",
+        "target": "verify_final"
+      },
+      {
+        "conditional": false,
+        "source": "mark_needs_review",
+        "target": "__end__"
+      },
+      {
+        "conditional": false,
+        "source": "mark_no_flags",
+        "target": "__end__"
+      },
+      {
+        "conditional": false,
+        "source": "prepare_sources",
+        "target": "analyzer"
+      },
+      {
+        "conditional": false,
+        "source": "summary",
+        "target": "fact_checker"
+      },
+      {
+        "conditional": true,
+        "source": "verify_final",
+        "target": "mark_needs_review"
+      },
+      {
+        "conditional": true,
+        "source": "verify_final",
+        "target": "mark_no_flags"
+      }
+    ],
+    "synthesis": [
+      {
+        "conditional": false,
+        "source": "__start__",
+        "target": "summary"
+      },
+      {
+        "conditional": false,
+        "source": "final",
+        "target": "__end__"
+      },
+      {
+        "conditional": false,
+        "source": "summary",
+        "target": "final"
+      }
+    ]
+  },
+  "llm": {
+    "ask": {
+      "parameters": [
+        {
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "prompt",
+          "type": "str"
+        },
+        {
+          "default": "",
+          "kind": "KEYWORD_ONLY",
+          "name": "system_prompt",
+          "type": "str"
+        }
+      ],
+      "returns": "LLMAnswer"
+    },
+    "count_tokens": {
+      "parameters": [
+        {
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "name": "text",
+          "type": "str"
+        }
+      ],
+      "returns": "int"
+    }
+  },
+  "nodes": {
+    "analyzer": {
+      "input": {
+        "fields": {
+          "llm": "LLMClient",
+          "text": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "llm",
+          "text",
+          "token_usage"
+        ]
+      },
+      "output": {
+        "fields": {
+          "analysis": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "analysis",
+          "token_usage"
+        ]
+      },
+      "runtime_guard": "analyzer",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "AnalyzerInput"
+          }
+        ],
+        "returns": "AnalyzerOutput"
+      },
+      "usage_agent": "Analyzer"
+    },
+    "fact_checker": {
+      "input": {
+        "fields": {
+          "analysis": "str",
+          "llm": "LLMClient",
+          "summary": "str",
+          "text": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [
+          "summary"
+        ],
+        "required": [
+          "analysis",
+          "llm",
+          "text",
+          "token_usage"
+        ]
+      },
+      "output": {
+        "fields": {
+          "fact_check": "FactCheckPayload",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "fact_check",
+          "token_usage"
+        ]
+      },
+      "runtime_guard": "fact_checker",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "FactCheckerInput"
+          }
+        ],
+        "returns": "FactCheckerOutput"
+      },
+      "usage_agent": "Fact Checker"
+    },
+    "final": {
+      "input": {
+        "fields": {
+          "analysis": "str",
+          "fact_check": "FactCheckPayload",
+          "llm": "LLMClient",
+          "summary": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "analysis",
+          "fact_check",
+          "llm",
+          "summary",
+          "token_usage"
+        ]
+      },
+      "output": {
+        "fields": {
+          "final": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "final",
+          "token_usage"
+        ]
+      },
+      "runtime_guard": "final",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "FinalInput"
+          }
+        ],
+        "returns": "FinalOutput"
+      },
+      "usage_agent": "Final"
+    },
+    "mark_needs_review": {
+      "input": {
+        "fields": {
+          "final_review": "FinalReviewDraft"
+        },
+        "optional": [],
+        "required": [
+          "final_review"
+        ]
+      },
+      "output": {
+        "fields": {
+          "final_review": "FinalReviewState"
+        },
+        "optional": [],
+        "required": [
+          "final_review"
+        ]
+      },
+      "runtime_guard": "mark_needs_review",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "ReviewInput"
+          }
+        ],
+        "returns": "ReviewOutput"
+      },
+      "usage_agent": ""
+    },
+    "mark_no_flags": {
+      "input": {
+        "fields": {
+          "final_review": "FinalReviewDraft"
+        },
+        "optional": [],
+        "required": [
+          "final_review"
+        ]
+      },
+      "output": {
+        "fields": {
+          "final_review": "FinalReviewState"
+        },
+        "optional": [],
+        "required": [
+          "final_review"
+        ]
+      },
+      "runtime_guard": "mark_no_flags",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "ReviewInput"
+          }
+        ],
+        "returns": "ReviewOutput"
+      },
+      "usage_agent": ""
+    },
+    "prepare_sources": {
+      "input": {
+        "fields": {
+          "text": "str"
+        },
+        "optional": [],
+        "required": [
+          "text"
+        ]
+      },
+      "output": {
+        "fields": {
+          "source_chunks": {
+            "list": [
+              "SourceChunk"
+            ]
+          }
+        },
+        "optional": [],
+        "required": [
+          "source_chunks"
+        ]
+      },
+      "runtime_guard": "prepare_sources",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "SourceInput"
+          }
+        ],
+        "returns": "SourceOutput"
+      },
+      "usage_agent": ""
+    },
+    "summary": {
+      "input": {
+        "fields": {
+          "analysis": "str",
+          "llm": "LLMClient",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "analysis",
+          "llm",
+          "token_usage"
+        ]
+      },
+      "output": {
+        "fields": {
+          "summary": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "summary",
+          "token_usage"
+        ]
+      },
+      "runtime_guard": "summary",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "SummaryInput"
+          }
+        ],
+        "returns": "SummaryOutput"
+      },
+      "usage_agent": "Summary"
+    },
+    "verify_final": {
+      "input": {
+        "fields": {
+          "final": "str",
+          "llm": "LLMClient",
+          "source_chunks": {
+            "list": [
+              "SourceChunk"
+            ]
+          },
+          "summary": "str",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [
+          "summary"
+        ],
+        "required": [
+          "final",
+          "llm",
+          "source_chunks",
+          "token_usage"
+        ]
+      },
+      "output": {
+        "fields": {
+          "final_review": "FinalReviewDraft",
+          "token_usage": "TokenUsage"
+        },
+        "optional": [],
+        "required": [
+          "final_review",
+          "token_usage"
+        ]
+      },
+      "runtime_guard": "verify_final",
+      "signature": {
+        "parameters": [
+          {
+            "kind": "POSITIONAL_OR_KEYWORD",
+            "name": "state",
+            "type": "FinalVerificationInput"
+          }
+        ],
+        "returns": "FinalVerificationOutput"
+      },
+      "usage_agent": "Final Verification"
+    }
+  },
+  "records": {
+    "AgentState": {
+      "fields": {
+        "analysis": "str",
+        "fact_check": {
+          "dict": [
+            "str",
+            "Any"
+          ]
+        },
+        "final": "str",
+        "final_review": {
+          "dict": [
+            "str",
+            "Any"
+          ]
+        },
+        "llm": "LLMClient",
+        "metadata": "DocumentMetadata",
+        "source_chunks": {
+          "list": [
+            "SourceChunk"
+          ]
+        },
+        "summary": "str",
+        "text": "str",
+        "token_usage": "TokenUsage"
+      },
+      "optional": [],
+      "required": [
+        "analysis",
+        "fact_check",
+        "final",
+        "final_review",
+        "llm",
+        "metadata",
+        "source_chunks",
+        "summary",
+        "text",
+        "token_usage"
+      ]
+    },
+    "ChunkResult": {
+      "fields": {
+        "analysis": "str",
+        "chunk_id": "str",
+        "fact_check": {
+          "dict": [
+            "str",
+            "Any"
+          ]
+        },
+        "token_count": "int"
+      },
+      "optional": [],
+      "required": [
+        "analysis",
+        "chunk_id",
+        "fact_check",
+        "token_count"
+      ]
+    },
+    "DocumentChunk": {
+      "fields": {
+        "chunk_id": "str",
+        "text": "str",
+        "token_count": "int"
+      },
+      "optional": [],
+      "required": [
+        "chunk_id",
+        "text",
+        "token_count"
+      ]
+    },
+    "FactCheckPayload": {
+      "fields": {
+        "contradictions": {
+          "list": [
+            "str"
+          ]
+        },
+        "doubtful_claims": {
+          "list": [
+            "str"
+          ]
+        },
+        "neuroslop": "NeuroslopPayload",
+        "verification_summary": "str"
+      },
+      "optional": [],
+      "required": [
+        "contradictions",
+        "doubtful_claims",
+        "neuroslop",
+        "verification_summary"
+      ]
+    },
+    "FinalReviewDraft": {
+      "fields": {
+        "contradictions": {
+          "list": [
+            "str"
+          ]
+        },
+        "doubtful_claims": {
+          "list": [
+            "str"
+          ]
+        },
+        "verification_summary": "str"
+      },
+      "optional": [],
+      "required": [
+        "contradictions",
+        "doubtful_claims",
+        "verification_summary"
+      ]
+    },
+    "FinalReviewState": {
+      "fields": {
+        "contradictions": {
+          "list": [
+            "str"
+          ]
+        },
+        "doubtful_claims": {
+          "list": [
+            "str"
+          ]
+        },
+        "status": {
+          "literal": [
+            "not_evaluated",
+            "no_flags",
+            "needs_review"
+          ]
+        },
+        "verification_summary": "str"
+      },
+      "optional": [],
+      "required": [
+        "contradictions",
+        "doubtful_claims",
+        "status",
+        "verification_summary"
+      ]
+    },
+    "NeuroslopPayload": {
+      "fields": {
+        "explanation": "str",
+        "probability": "float"
+      },
+      "optional": [],
+      "required": [
+        "explanation",
+        "probability"
+      ]
+    },
+    "SourceChunk": {
+      "fields": {
+        "chunk_id": "str",
+        "text": "str"
+      },
+      "optional": [],
+      "required": [
+        "chunk_id",
+        "text"
+      ]
+    },
+    "WorkflowState": {
+      "fields": {
+        "analysis": "str",
+        "chunk_index": "int",
+        "chunk_results": {
+          "list": [
+            "ChunkResult"
+          ]
+        },
+        "chunks": {
+          "list": [
+            "DocumentChunk"
+          ]
+        },
+        "fact_check": {
+          "dict": [
+            "str",
+            "Any"
+          ]
+        },
+        "final": "str",
+        "final_review": {
+          "union": [
+            {
+              "dict": [
+                "str",
+                "Any"
+              ]
+            },
+            "NoneType"
+          ]
+        },
+        "llm": "Any",
+        "metadata": "DocumentMetadata",
+        "summary": "str",
+        "text": "str",
+        "token_usage": "TokenUsage"
+      },
+      "optional": [],
+      "required": [
+        "analysis",
+        "chunk_index",
+        "chunk_results",
+        "chunks",
+        "fact_check",
+        "final",
+        "final_review",
+        "llm",
+        "metadata",
+        "summary",
+        "text",
+        "token_usage"
+      ]
+    }
+  },
+  "schemas": {
+    "AnalysisResults": {
+      "$defs": {
+        "FactCheckResult": {
+          "properties": {
+            "contradictions": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "doubtful_claims": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "neuroslop": {
+              "$ref": "#/$defs/NeuroslopResult"
+            },
+            "verification_summary": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "verification_summary",
+            "neuroslop"
+          ],
+          "type": "object"
+        },
+        "FinalReview": {
+          "properties": {
+            "contradictions": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "doubtful_claims": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "status": {
+              "default": "not_evaluated",
+              "enum": [
+                "not_evaluated",
+                "no_flags",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            "verification_summary": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "verification_summary",
+            "doubtful_claims",
+            "contradictions"
+          ],
+          "type": "object"
+        },
+        "NeuroslopResult": {
+          "properties": {
+            "explanation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "probability": {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "probability",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      },
+      "properties": {
+        "analysis": {
+          "type": "string"
+        },
+        "fact_check": {
+          "$ref": "#/$defs/FactCheckResult"
+        },
+        "final": {
+          "type": "string"
+        },
+        "final_review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FinalReview"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "analysis",
+        "summary",
+        "fact_check",
+        "final"
+      ],
+      "type": "object"
+    },
+    "DocumentMetadata": {
+      "properties": {
+        "file_type": {
+          "enum": [
+            "pdf",
+            "txt",
+            "docx",
+            "html",
+            "md",
+            "csv"
+          ],
+          "type": "string"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file_type",
+        "size_bytes"
+      ],
+      "type": "object"
+    },
+    "FactCheckResult": {
+      "$defs": {
+        "NeuroslopResult": {
+          "properties": {
+            "explanation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "probability": {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "probability",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      },
+      "properties": {
+        "contradictions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "doubtful_claims": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "neuroslop": {
+          "$ref": "#/$defs/NeuroslopResult"
+        },
+        "verification_summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "verification_summary",
+        "neuroslop"
+      ],
+      "type": "object"
+    },
+    "FinalReview": {
+      "properties": {
+        "contradictions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "doubtful_claims": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "status": {
+          "default": "not_evaluated",
+          "enum": [
+            "not_evaluated",
+            "no_flags",
+            "needs_review"
+          ],
+          "type": "string"
+        },
+        "verification_summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "verification_summary",
+        "doubtful_claims",
+        "contradictions"
+      ],
+      "type": "object"
+    },
+    "LLMAnswer": {
+      "$defs": {
+        "TokenCount": {
+          "properties": {
+            "input_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "output_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "total_tokens": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "usage": {
+          "$ref": "#/$defs/TokenCount"
+        }
+      },
+      "required": [
+        "content",
+        "usage"
+      ],
+      "type": "object"
+    },
+    "PipelineResult": {
+      "$defs": {
+        "DocumentMetadata": {
+          "properties": {
+            "file_type": {
+              "enum": [
+                "pdf",
+                "txt",
+                "docx",
+                "html",
+                "md",
+                "csv"
+              ],
+              "type": "string"
+            },
+            "size_bytes": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "file_type",
+            "size_bytes"
+          ],
+          "type": "object"
+        },
+        "FactCheckResult": {
+          "properties": {
+            "contradictions": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "doubtful_claims": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "neuroslop": {
+              "$ref": "#/$defs/NeuroslopResult"
+            },
+            "verification_summary": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "verification_summary",
+            "neuroslop"
+          ],
+          "type": "object"
+        },
+        "FinalReview": {
+          "properties": {
+            "contradictions": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "doubtful_claims": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "status": {
+              "default": "not_evaluated",
+              "enum": [
+                "not_evaluated",
+                "no_flags",
+                "needs_review"
+              ],
+              "type": "string"
+            },
+            "verification_summary": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "verification_summary",
+            "doubtful_claims",
+            "contradictions"
+          ],
+          "type": "object"
+        },
+        "NeuroslopResult": {
+          "properties": {
+            "explanation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "probability": {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "probability",
+            "explanation"
+          ],
+          "type": "object"
+        },
+        "TokenCount": {
+          "properties": {
+            "input_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "output_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "total_tokens": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "TokenUsage": {
+          "properties": {
+            "by_agent": {
+              "additionalProperties": {
+                "$ref": "#/$defs/TokenCount"
+              },
+              "type": "object"
+            },
+            "input_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "output_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "total_tokens": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "properties": {
+        "analysis": {
+          "type": "string"
+        },
+        "fact_check": {
+          "$ref": "#/$defs/FactCheckResult"
+        },
+        "final": {
+          "type": "string"
+        },
+        "final_review": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FinalReview"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DocumentMetadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "summary": {
+          "type": "string"
+        },
+        "token_usage": {
+          "$ref": "#/$defs/TokenUsage"
+        }
+      },
+      "required": [
+        "analysis",
+        "summary",
+        "fact_check",
+        "final",
+        "token_usage"
+      ],
+      "type": "object"
+    },
+    "TokenCount": {
+      "properties": {
+        "input_tokens": {
+          "default": 0,
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "type": "integer"
+        },
+        "total_tokens": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "TokenUsage": {
+      "$defs": {
+        "TokenCount": {
+          "properties": {
+            "input_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "output_tokens": {
+              "default": 0,
+              "type": "integer"
+            },
+            "total_tokens": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "properties": {
+        "by_agent": {
+          "additionalProperties": {
+            "$ref": "#/$defs/TokenCount"
+          },
+          "type": "object"
+        },
+        "input_tokens": {
+          "default": 0,
+          "type": "integer"
+        },
+        "output_tokens": {
+          "default": 0,
+          "type": "integer"
+        },
+        "total_tokens": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "version": 1
+}
