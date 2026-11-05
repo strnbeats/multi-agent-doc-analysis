@@ -21,8 +21,9 @@ LLM_NODES = [name for name, spec in NODE_CONTRACTS.items() if spec.usage_agent]
 def state():
     fact_check = dict(verification_summary="Проверено", doubtful_claims=[], contradictions=[],
                       neuroslop=dict(probability=.2, explanation="Эвристика"))
+    final_review = {key: value for key, value in fact_check.items() if key != "neuroslop"}
     return dict(text="Исходный документ.", analysis="Анализ.", summary="Сводка.",
-                final="Отчёт.", fact_check=deepcopy(fact_check), final_review=fact_check,
+                final="Отчёт.", fact_check=deepcopy(fact_check), final_review=final_review,
                 source_chunks=[dict(chunk_id="chunk_0001", text="Исходный документ.")],
                 llm=MockLLMClient(), token_usage=TokenUsage())
 
@@ -156,6 +157,29 @@ def test_valid_node_returns_accumulated_usage_without_mutating_callers_state():
     assert result["token_usage"].total_tokens == 40
     assert result["token_usage"].by_agent["Analyzer"].total_tokens == 10
     assert result["token_usage"].by_agent["Summary"].total_tokens == 30
+
+
+def test_final_verification_has_its_own_result_without_neuroslop():
+    result = NODE_FUNCTIONS["verify_final"](state())
+    assert set(result["final_review"]) == {"verification_summary", "doubtful_claims", "contradictions"}
+    marked = NODE_FUNCTIONS["mark_no_flags"](result)
+    assert marked["final_review"]["status"] == "no_flags"
+    assert "neuroslop" not in marked["final_review"]
+
+
+@pytest.mark.parametrize("name", ["verify_final", "mark_no_flags", "mark_needs_review"])
+def test_final_review_contract_rejects_fact_checker_specific_fields(name):
+    @agent_node(name)
+    def broken(source):
+        output = {"final_review": state()["fact_check"]}
+        if name == "verify_final":
+            output["token_usage"] = source["token_usage"]
+        else:
+            output["final_review"]["status"] = "no_flags"
+        return output
+
+    with pytest.raises(PipelineError, match="тип результата final_review"):
+        broken(state())
 
 
 @pytest.mark.parametrize("key", ["doubtful_claims", "contradictions"])

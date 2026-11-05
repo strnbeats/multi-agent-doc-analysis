@@ -577,14 +577,12 @@
             "str"
           ]
         },
-        "neuroslop": "NeuroslopPayload",
         "verification_summary": "str"
       },
       "optional": [],
       "required": [
         "contradictions",
         "doubtful_claims",
-        "neuroslop",
         "verification_summary"
       ]
     },
@@ -600,7 +598,6 @@
             "str"
           ]
         },
-        "neuroslop": "NeuroslopPayload",
         "status": {
           "literal": [
             "not_evaluated",
@@ -614,7 +611,6 @@
       "required": [
         "contradictions",
         "doubtful_claims",
-        "neuroslop",
         "status",
         "verification_summary"
       ]

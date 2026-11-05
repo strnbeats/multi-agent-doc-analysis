@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from .errors import PipelineError
 from .llm.client import LLMClient
-from .models import DocumentMetadata, FactCheckResult, TokenCount, TokenUsage
+from .models import DocumentMetadata, FactCheckResult, FinalReview, TokenCount, TokenUsage
 
 
 CONTRACT_VERSION = 1
@@ -33,8 +33,12 @@ class FactCheckPayload(TypedDict):
     neuroslop: NeuroslopPayload
 
 
-class FinalReviewDraft(FactCheckPayload):
-    """Внутренний результат повторного fact_checker до выставления статуса."""
+class FinalReviewDraft(TypedDict):
+    """Отдельный результат проверки отчёта: без оценки нейрослопа документа."""
+
+    verification_summary: str
+    doubtful_claims: List[str]
+    contradictions: List[str]
 
 
 class FinalReviewState(FinalReviewDraft):
@@ -167,18 +171,23 @@ def _validate_field(name, value, *, review_has_status=False):
     if name in {"fact_check", "final_review"}:
         if not isinstance(value, dict):
             return False
-        expected = set(FactCheckPayload.__required_keys__)
+        payload_type = FactCheckPayload if name == "fact_check" else FinalReviewDraft
+        expected = set(payload_type.__required_keys__)
         if review_has_status:
             expected.add("status")
         if set(value) != expected:
             return False
         if review_has_status and value["status"] not in {"not_evaluated", "no_flags", "needs_review"}:
             return False
-        core = {key: value[key] for key in FactCheckPayload.__required_keys__}
-        if not isinstance(core["neuroslop"], dict) or set(core["neuroslop"]) != {"probability", "explanation"}:
-            return False
         try:
-            FactCheckResult.model_validate(core, strict=True)
+            if name == "fact_check":
+                if not isinstance(value["neuroslop"], dict) or set(value["neuroslop"]) != {"probability", "explanation"}:
+                    return False
+                FactCheckResult.model_validate(value, strict=True)
+            else:
+                checked = dict(value)
+                checked.setdefault("status", "not_evaluated")
+                FinalReview.model_validate(checked, strict=True)
         except ValidationError:
             return False
         return True

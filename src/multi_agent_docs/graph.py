@@ -47,7 +47,13 @@ def verify_final(state: FinalVerificationInput) -> FinalVerificationOutput:
     usage.add("Final Verification", reviewed["token_usage"])
 
     return {
-        "final_review": reviewed["fact_check"],
+        # Реализация проверки пока общая, но контракт итогового проверяющего
+        # самостоятельный: оценка нейрослопа исходника в него не входит.
+        "final_review": {
+            "verification_summary": reviewed["fact_check"]["verification_summary"],
+            "doubtful_claims": reviewed["fact_check"]["doubtful_claims"],
+            "contradictions": reviewed["fact_check"]["contradictions"],
+        },
         "token_usage": usage,
     }
 
