@@ -15,8 +15,14 @@ def test_pipeline_returns_structured_result(tmp_path: Path, settings):
     path.write_text("Короткий содержательный документ.", encoding="utf-8")
     result = run_document(str(path), FakeLLM(), settings)
     assert result.fact_check.neuroslop.probability == 0.25
-    assert result.token_usage.total_tokens == 60
-    assert set(result.token_usage.by_agent) == {"Analyzer", "Summary", "Fact Checker", "Final"}
+    assert result.token_usage.total_tokens == 75
+    assert set(result.token_usage.by_agent) == {
+        "Analyzer",
+        "Summary",
+        "Fact Checker",
+        "Final",
+        "Final Verification",
+    }
 
 
 def test_fact_checker_retries_once_and_fails(tmp_path: Path, settings):
@@ -73,3 +79,32 @@ def test_pipeline_preserves_original_metadata(tmp_path: Path, settings, monkeypa
         assert visited[-1] == "synthesis_app"
     else:
         assert visited == ["app"]
+
+
+def test_pipeline_checks_final_against_source(tmp_path: Path, settings):
+    from multi_agent_docs.llm.mock_client import MockLLMClient
+
+    class RecordingLLM(MockLLMClient):
+        def __init__(self):
+            self.prompts = []
+
+        def ask(self, prompt, *, system_prompt=""):
+            self.prompts.append(prompt)
+            return super().ask(prompt, system_prompt=system_prompt)
+
+    source = "Строительство дома занимает 30 дней."
+    path = tmp_path / "document.txt"
+    path.write_text(source, encoding="utf-8")
+
+    llm = RecordingLLM()
+    result = run_document(str(path), llm, settings)
+
+    last_prompt = llm.prompts[-1]
+
+    assert source in last_prompt
+    assert result.final in last_prompt
+    assert result.analysis not in last_prompt
+    assert (
+        result.token_usage.by_agent["Final Verification"].total_tokens
+        == 30
+    )

@@ -100,6 +100,8 @@ class AnalysisService:
                         for name, value in output.token_usage.by_agent.items()
                     },
                 }
+                if output.final_review is not None:
+                    result["final_review"] = output.final_review.model_dump()
                 if output.metadata is not None:
                     result["metadata"] = output.metadata.model_dump()
                 self.repository.complete(
