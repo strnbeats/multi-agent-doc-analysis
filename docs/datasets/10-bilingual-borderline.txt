@@ -1,0 +1,9 @@
+Компания NovaSoft объявила о релизе продукта Orion 2.0.
+
+Russian brief: «Orion 2.0 вышел 1 октября 2025 года. В версии — офлайн-режим и поддержка трёх языков интерфейса.»
+
+English note in the same press pack: “Orion 2.0 will be generally available on October 15, 2025. Offline mode ships in a follow-up build; the October release includes two UI languages.”
+
+Далее по-русски: «Бета-тестеры получили доступ ещё в сентябре. Полный релиз для всех пользователей — в октябре.» Не уточняется, какой именно день октября считать «полным релизом».
+
+В блоке FAQ: «Q: Is offline mode in 2.0 at launch? A: Offline mode is part of the 2.0 family and arrives shortly after GA.» Это совместимо с английской заметкой, но расходится с русской фразой «в версии — офлайн-режим», если читать её как «уже в день релиза».

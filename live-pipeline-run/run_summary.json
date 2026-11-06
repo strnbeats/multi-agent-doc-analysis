@@ -1,0 +1,172 @@
+[
+  {
+    "fixture": "01-consistent-science.txt",
+    "ok": true,
+    "elapsed_s": 13.3,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/01-consistent-science.json",
+    "analysis_len": 1659,
+    "summary_len": 560,
+    "final_len": 1790,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 5297
+  },
+  {
+    "fixture": "02-contradiction-numbers.txt",
+    "ok": true,
+    "elapsed_s": 12.9,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/02-contradiction-numbers.json",
+    "analysis_len": 1901,
+    "summary_len": 603,
+    "final_len": 2714,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 6261
+  },
+  {
+    "fixture": "03-contradiction-dates.txt",
+    "ok": true,
+    "elapsed_s": 11.3,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/03-contradiction-dates.json",
+    "analysis_len": 1790,
+    "summary_len": 658,
+    "final_len": 2391,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 5521
+  },
+  {
+    "fixture": "04-contradiction-names.txt",
+    "ok": true,
+    "elapsed_s": 11.9,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/04-contradiction-names.json",
+    "analysis_len": 1858,
+    "summary_len": 512,
+    "final_len": 2283,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 5498
+  },
+  {
+    "fixture": "05-claim-vs-denial.txt",
+    "ok": true,
+    "elapsed_s": 13.8,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/05-claim-vs-denial.json",
+    "analysis_len": 2581,
+    "summary_len": 644,
+    "final_len": 2985,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 6387
+  },
+  {
+    "fixture": "06-borderline-ambiguous.txt",
+    "ok": true,
+    "elapsed_s": 11.4,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/06-borderline-ambiguous.json",
+    "analysis_len": 1781,
+    "summary_len": 657,
+    "final_len": 2452,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 5457
+  },
+  {
+    "fixture": "07-clean-news-summary.txt",
+    "ok": true,
+    "elapsed_s": 11.7,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/07-clean-news-summary.json",
+    "analysis_len": 2171,
+    "summary_len": 571,
+    "final_len": 2422,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 5167
+  },
+  {
+    "fixture": "08-rich-facts-analyzer.txt",
+    "ok": true,
+    "elapsed_s": 11.5,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/08-rich-facts-analyzer.json",
+    "analysis_len": 2135,
+    "summary_len": 590,
+    "final_len": 2479,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 6047
+  },
+  {
+    "fixture": "09-consistent-policy.txt",
+    "ok": true,
+    "elapsed_s": 10.7,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/09-consistent-policy.json",
+    "analysis_len": 2158,
+    "summary_len": 546,
+    "final_len": 1944,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 5523
+  },
+  {
+    "fixture": "10-bilingual-borderline.txt",
+    "ok": true,
+    "elapsed_s": 14.3,
+    "out": "/home/annebiil/.local/state/cursor/agent-stores/cursor_agent_stores/bc-8b92c8c1-dc46-40a0-bef6-857ea6cc088b/files/internal/live-pipeline-run/10-bilingual-borderline.json",
+    "analysis_len": 2174,
+    "summary_len": 615,
+    "final_len": 2679,
+    "has_final_review": true,
+    "fact_check_keys": [
+      "verification_summary",
+      "doubtful_claims",
+      "contradictions",
+      "neuroslop"
+    ],
+    "tokens_total": 6282
+  }
+]
