@@ -49,3 +49,58 @@ def test_fact_checker_keeps_schema_summary_and_repair_usage():
     assert "только формат" in repair.kwargs["system_prompt"]
     assert result["fact_check"] == payload
     assert result["token_usage"].by_agent["Fact Checker"].total_tokens == 20
+def test_final_agent_preserves_all_fact_checker_warnings():
+    llm = Mock()
+    llm.ask.return_value = answer("Общий вывод документа.")
+
+    doubtful = [
+        "Срок выполнения составляет 10 дней",
+        "Бюджет проекта не подтверждён",
+    ]
+    contradictions = [
+        "В разделе 1 указан срок 10 дней, а в разделе 2 — 15 дней",
+    ]
+
+    state = dict(
+        analysis="Анализ документа",
+        summary="Краткое содержание",
+        fact_check={
+            "verification_summary": "Найдены замечания",
+            "doubtful_claims": doubtful,
+            "contradictions": contradictions,
+        },
+        llm=llm,
+        token_usage=TokenUsage(),
+    )
+
+    result = final_agent(state)
+    final_text = result["final"]
+
+    for claim in doubtful:
+        assert claim in final_text
+
+    for contradiction in contradictions:
+        assert contradiction in final_text
+
+    assert "НЕ ПОДТВЕРЖДЕНО" in final_text
+
+
+def test_final_agent_marks_unverified_claims_as_unverified():
+    llm = Mock()
+    llm.ask.return_value = answer("Итоговый вывод.")
+
+    state = dict(
+        analysis="Анализ",
+        summary="Содержание",
+        fact_check={
+            "doubtful_claims": ["Компания получила прибыль"],
+            "contradictions": [],
+        },
+        llm=llm,
+        token_usage=TokenUsage(),
+    )
+
+    result = final_agent(state)
+
+    assert "Компания получила прибыль" in result["final"]
+    assert "НЕ ПОДТВЕРЖДЕНО" in result["final"]
