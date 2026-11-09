@@ -28,6 +28,7 @@ class Settings:
     gigachat_scope: str
     gigachat_model: str
     gigachat_verify_ssl: bool
+    gigachat_ca_bundle_file: Path | None = None
 
     def __post_init__(self) -> None:
         """Проверить согласованность настроек после создания."""
@@ -40,6 +41,9 @@ class Settings:
     def from_env(cls) -> "Settings":
         """Загрузить настройки из .env и переменных окружения."""
         load_dotenv()
+
+        ca_bundle_file = os.getenv("GIGACHAT_CA_BUNDLE_FILE")
+
         return cls(
             app_mode=os.getenv("APP_MODE", "real").lower(),
             database_path=Path(os.getenv("DATABASE_PATH", "data/app.db")),
@@ -53,4 +57,7 @@ class Settings:
             gigachat_model=os.getenv("GIGACHAT_MODEL", "GigaChat-3-Ultra"),
             gigachat_verify_ssl=os.getenv("GIGACHAT_VERIFY_SSL", "true").lower()
             in {"1", "true", "yes"},
+            gigachat_ca_bundle_file=(
+                Path(ca_bundle_file).expanduser() if ca_bundle_file else None
+            ),
         )
