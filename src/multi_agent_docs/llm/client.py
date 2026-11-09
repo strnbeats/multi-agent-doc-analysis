@@ -21,7 +21,6 @@ class LLMClient(Protocol):
 
 class GigaChatClient:
     def __init__(self, settings: Settings):
-        """Настроить SDK GigaChat из параметров приложения."""
         self.model = settings.gigachat_model
         try:
             self._client = GigaChat(
@@ -29,12 +28,16 @@ class GigaChatClient:
                 scope=settings.gigachat_scope,
                 model=settings.gigachat_model,
                 verify_ssl_certs=settings.gigachat_verify_ssl,
+                ca_bundle_file=(
+                    str(settings.gigachat_ca_bundle_file)
+                    if settings.gigachat_ca_bundle_file
+                    else None
+                ),
             )
         except Exception as error:
             raise LLMError("Не удалось настроить подключение к GigaChat") from error
 
     def ask(self, prompt: str, *, system_prompt: str = "") -> LLMAnswer:
-        """Отправить prompt и вернуть текст вместе со статистикой токенов."""
         try:
             messages = []
             if system_prompt:
@@ -53,7 +56,6 @@ class GigaChatClient:
             raise LLMError() from error
 
     def count_tokens(self, text: str) -> int:
-        """Получить точное число токенов текста через GigaChat API."""
         try:
             result = self._client.tokens_count([text], model=self.model)
             return result[0].tokens
@@ -63,5 +65,4 @@ class GigaChatClient:
 
 @lru_cache(maxsize=1)
 def get_default_client() -> GigaChatClient:
-    """Вернуть один лениво созданный реальный клиент GigaChat."""
     return GigaChatClient(Settings.from_env())

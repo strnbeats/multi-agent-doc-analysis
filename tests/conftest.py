@@ -69,4 +69,5 @@ def settings(tmp_path: Path) -> Settings:
         gigachat_scope="test",
         gigachat_model="test",
         gigachat_verify_ssl=True,
+        gigachat_ca_bundle_file=None,
     )
